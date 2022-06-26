@@ -3,6 +3,10 @@ uuid = "051c61c3-3cb4-45c9-80ac-8d7d2a7bbd3e"
 authors = ["Semiotic Labs"]
 version = "0.1.0"
 
+[deps]
+JuliaFormatter = "98e50ef6-434e-11e9-1051-2b60c6c9e899"
+ReinforcementLearning = "158674fc-8238-5cab-b5ba-03dfc80d1318"
+
 [compat]
 julia = "1.7"
 

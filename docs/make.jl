@@ -1,7 +1,9 @@
 using CurationEnvironment
 using Documenter
 
-DocMeta.setdocmeta!(CurationEnvironment, :DocTestSetup, :(using CurationEnvironment); recursive=true)
+DocMeta.setdocmeta!(
+    CurationEnvironment, :DocTestSetup, :(using CurationEnvironment); recursive=true
+)
 
 makedocs(;
     modules=[CurationEnvironment],
@@ -13,12 +15,7 @@ makedocs(;
         canonical="https://Semiotic Labs.github.io/CurationEnvironment.jl",
         assets=String[],
     ),
-    pages=[
-        "Home" => "index.md",
-    ],
+    pages=["Home" => "index.md"],
 )
 
-deploydocs(;
-    repo="github.com/Semiotic Labs/CurationEnvironment.jl",
-    devbranch="main",
-)
+deploydocs(; repo="github.com/Semiotic Labs/CurationEnvironment.jl", devbranch="main")

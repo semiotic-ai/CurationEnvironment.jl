@@ -1,5 +1,8 @@
 module CurationEnvironment
 
-# Write your package code here.
+using ReinforcementLearning
 
+include("domainmodel.jl")
+include("policy.jl")
+include("environment.jl")
 end
