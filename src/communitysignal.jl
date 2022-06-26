@@ -95,12 +95,13 @@ function best_response(model::CommunitySignal, c::Curator, s::Subgraph)
 end
 
 """
-    step(π::Function, c::Curator, s::Subgraph)::Tuple{Curator, Subgraph}
+    step(mode::CommunitySignal, π::Function, c::Curator, s::Subgraph)::Tuple{Curator, Subgraph}
 
 Curator `c` takes decides how much to curate on subgraph `s` by running the policy `π`.
 """
-function step(model::CommunitySignal, π::Function, c::Curator, s::Subgraph)#::Tuple{Curator, Subgraph}
+function step(model::CommunitySignal, π::F, c::Curator, s::Subgraph) where {F<:Function}
     p = π(model, c, s)
+    p = c.σ - p ≥ 0 ? p : c.σ  # Don't spend more than you've got
     x = equity_proportion(model, p, s)
     newshares = shares(model, x, s)
     M = length(c.ses)

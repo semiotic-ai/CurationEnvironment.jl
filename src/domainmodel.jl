@@ -49,7 +49,7 @@ struct Curator{M}
 end
 
 """
-    Subgraph(id::Integer, v::Number, τ::Number)
+    Subgraph(id::Integer, v::Number, s::Number, τ::Number)
 
 `Subgraph` is an entity on which curators signal tokens. Subgraph `id` has signal `v`, shares `s`
 and tax rate `τ`
