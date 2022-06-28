@@ -89,7 +89,7 @@ end
 - `s::Subgraph`: The subgraph which the curator may curate.
 """
 function best_response(model::CommunitySignal, c::Curator, s::Subgraph)
-    # TODO: If s.s = 0, x is / 0
+    # If s.s == 0, x is / 0
     _s = s.s == 0 ? 1 : s.s
     return best_response(model, s.v, c.v̂s[s.id], s.τ, c.ses[s.id] / _s)
 end
