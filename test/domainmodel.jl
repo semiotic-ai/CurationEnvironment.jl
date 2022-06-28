@@ -8,7 +8,7 @@
 
         # If only provided one number for v̂s and for xs, repeat that number to fill a tuple.
         c = CurationEnvironment.Curator{5}(1, 100, 0, 100.0)
-        @test length(c.xs) == 5
+        @test length(c.v̂s) == 5
     end
 
     @testset "Subgraph" begin
