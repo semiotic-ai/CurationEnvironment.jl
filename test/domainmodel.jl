@@ -20,8 +20,5 @@
 
         # If s < 0, should throw an ArgumentError
         @test_throws ArgumentError CurationEnvironment.Subgraph(1, 100, -1, 0)
-
-        # If τ < 0, should throw an ArgumentError
-        @test_throws ArgumentError CurationEnvironment.Subgraph(1, 100, 1, -1)
     end
 end

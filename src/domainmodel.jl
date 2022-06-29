@@ -1,10 +1,8 @@
-import Base: length, iterate
-
 abstract type CurationModel end
 # These functions enable dot application of CurationModels in functions
-length(::T) where {T<:CurationModel} = 1
-iterate(model::T) where {T<:CurationModel} = (model, nothing)
-iterate(model::T, state) where {T<:CurationModel} = nothing
+Base.length(::T) where {T<:CurationModel} = 1
+Base.iterate(model::T) where {T<:CurationModel} = (model, nothing)
+Base.iterate(model::T, state) where {T<:CurationModel} = nothing
 
 struct Curator{M}
     id::Integer
@@ -58,12 +56,9 @@ struct Subgraph
     id::Integer
     v::Number
     s::Number
-    τ::Number
+    τ::TaxRate
 
     function Subgraph(id::Integer, v::Number, s::Number, τ::Number)
-        if τ < 0.0 || τ > 1.0
-            throw(ArgumentError("τ must be between 0.0 and 1.0."))
-        end
         if v < 0
             throw(ArgumentError("v must be nonnegative."))
         end
