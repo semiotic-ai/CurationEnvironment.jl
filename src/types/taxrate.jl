@@ -17,3 +17,4 @@ Base.promote(a::TaxRate, b::Real) = promote(a.τ, b)
 Base.promote(a::Real, b::TaxRate) = promote(a, b.τ)
 Base.promote_rule(::Type{TaxRate{T}}, ::Type{S}) where {T<:AbstractFloat,S<:Real} = T
 Base.convert(::Type{Union{}}, a::TaxRate) = a.τ
+τ(a::TaxRate) = a.τ

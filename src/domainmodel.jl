@@ -6,12 +6,12 @@ Base.iterate(model::T, state) where {T<:CurationModel} = nothing
 
 struct Curator{M}
     id::Integer
-    v̂s::NTuple{M,Number}
-    ses::NTuple{M,Number}
-    σ::Number
+    v̂s::NTuple{M,Signal}
+    ses::NTuple{M,Shares}
+    σ::Stake
 
     @doc """
-        Curator{M}(id::Integer, ̂vs::NTuple{M, Number}, ses::NTuple{M, Number}, σ::Number)
+        Curator{M}(id::Integer, ̂vs::NTuple{M, Signal}, ses::NTuple{M, Shares}, σ::Stake)
 
     `Curator` is an entity that signals tokens on subgraph to demonstrate the value of the subgraph
     to indexers. Curators are paid via query fees when on a subgraph.
@@ -23,9 +23,6 @@ struct Curator{M}
     ) where {M}
         if id < 1
             throw(ArgumentError("Curator id must be 1 or greater."))
-        end
-        if σ < 0
-            throw(ArgumentError("σ must be nonnegative."))
         end
         return new{M}(id, v̂s, ses, σ)
     end
@@ -47,24 +44,18 @@ struct Curator{M}
 end
 
 """
-    Subgraph(id::Integer, v::Number, s::Number, τ::Number)
+    Subgraph(id::Integer, v::Signal, s::Shares, τ::TaxRate)
 
 `Subgraph` is an entity on which curators signal tokens. Subgraph `id` has signal `v`, shares `s`
 and tax rate `τ`
 """
 struct Subgraph
     id::Integer
-    v::Number
-    s::Number
+    v::Signal
+    s::Shares
     τ::TaxRate
 
-    function Subgraph(id::Integer, v::Number, s::Number, τ::Number)
-        if v < 0
-            throw(ArgumentError("v must be nonnegative."))
-        end
-        if s < 0
-            throw(ArgumentError("s must be nonnegative."))
-        end
+    function Subgraph(id::Integer, v::Number, s::Number, τ)
         if id < 1
             throw(ArgumentError("Subgraph id must be 1 or greater."))
         end
