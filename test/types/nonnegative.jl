@@ -1,13 +1,15 @@
 @testset "nonnegative" begin
+    # Test fails when < 0
+    @test_throws InexactError CurationEnvironment.Shares(-1)
     # Test a single non-negative type
-    s1 = CurationEnvironment.Shares(5)
+    x = CurationEnvironment.Shares(5)
     # Operations
-    @test s1 + s1 == CurationEnvironment.Shares(10)
-    @test s1 - s1 == CurationEnvironment.Shares(0)
-    @test s1 * s1 == 25  # Units go away for * and /
-    @test s1 / s1 == 1
+    @test x + x == CurationEnvironment.Shares(10)
+    @test x - x == CurationEnvironment.Shares(0)
+    @test x * x == 25  # Units go away for * and /
+    @test x / x == 1
     # Promotion with Float64
-    @test s1 + 5.0 == 10
+    @test x + 5.0 == 10
     # Conversion
-    @test convert(CurationEnvironment.Shares, 5) == s1
+    @test convert(CurationEnvironment.Shares, 5) == x
 end
