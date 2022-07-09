@@ -1,5 +1,0 @@
-include("taxrate.jl")
-include("nonnegativereal.jl")
-include("shares.jl")
-include("signal.jl")
-include("stake.jl")

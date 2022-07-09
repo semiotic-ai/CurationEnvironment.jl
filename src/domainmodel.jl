@@ -6,12 +6,12 @@ Base.iterate(model::T, state) where {T<:CurationModel} = nothing
 
 struct Curator{M}
     id::Integer
-    v̂s::NTuple{M,Signal}
-    ses::NTuple{M,Shares}
-    σ::Stake
+    v̂s::NTuple{M,Real}
+    ses::NTuple{M,Real}
+    σ::Real
 
     @doc """
-        Curator{M}(id::Integer, ̂vs::NTuple{M, Signal}, ses::NTuple{M, Shares}, σ::Stake)
+        Curator{M}(id::Integer, ̂vs::NTuple{M, Real}, ses::NTuple{M, Real}, σ::Real)
 
     `Curator` is an entity that signals tokens on subgraph to demonstrate the value of the subgraph
     to indexers. Curators are paid via query fees when on a subgraph.
@@ -19,10 +19,13 @@ struct Curator{M}
     minted tokens on each subgraph. The curator has `σ` stake to spend.
     """
     function Curator{M}(
-        id::Integer, v̂s::NTuple{M,Number}, ses::NTuple{M,Number}, σ::Number
+        id::Integer, v̂s::NTuple{M,Real}, ses::NTuple{M,Real}, σ::Real
     ) where {M}
         if id < 1
             throw(ArgumentError("Curator id must be 1 or greater."))
+        end
+        if σ < 0
+            throw(ArgumentError("Curator stake must be 0 or greater."))
         end
         return new{M}(id, v̂s, ses, σ)
     end
@@ -32,11 +35,11 @@ struct Curator{M}
 
 # Arguments
 - `id::Integer`: A unique identifier for the curator.
-- `v̂::Number`: The curator's valuation for a subgraph. This will be applied for M subgraphs.
-- `s:: Number`: The number of minted tokens that the curator owns. This will be applied for M subgraphs.
-- `σ::Number`: The stake the curator owns.
+- `v̂::Real`: The curator's valuation for a subgraph. This will be applied for M subgraphs.
+- `s:: Real`: The number of minted tokens that the curator owns. This will be applied for M subgraphs.
+- `σ::Real`: The stake the curator owns.
 """
-    function Curator{M}(id::Integer, v̂::Number, s::Number, σ::Number) where {M}
+    function Curator{M}(id::Integer, v̂::Real, s::Real, σ::Real) where {M}
         v̂s = ntuple(_ -> v̂, Val(M))
         ses = ntuple(_ -> s, Val(M))
         return Curator{M}(id, v̂s, ses, σ)
@@ -44,20 +47,26 @@ struct Curator{M}
 end
 
 """
-    Subgraph(id::Integer, v::Signal, s::Shares, τ::TaxRate)
+    Subgraph(id::Integer, v::Real, s::Real, τ::Real)
 
 `Subgraph` is an entity on which curators signal tokens. Subgraph `id` has signal `v`, shares `s`
 and tax rate `τ`
 """
 struct Subgraph
     id::Integer
-    v::Signal
-    s::Shares
-    τ::TaxRate
+    v::Real
+    s::Real
+    τ::Real
 
-    function Subgraph(id::Integer, v::Number, s::Number, τ)
+    function Subgraph(id::Integer, v::Real, s::Real, τ)
         if id < 1
             throw(ArgumentError("Subgraph id must be 1 or greater."))
+        end
+        if v < 0
+            throw(ArgumentError("Subgraph signal must be 0 or greater."))
+        end
+        if s < 0
+            throw(ArgumentError("Subgraph shares must be 0 or greater."))
         end
         return new(id, v, s, τ)
     end
