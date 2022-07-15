@@ -3,7 +3,7 @@ module CurationEnvironment
 export Curator, Subgraph, CommunitySignal, best_response, step
 
 using Base: Base
-using ReinforcementLearning
+using Accessors
 
 include("domainmodel.jl")
 include("communitysignal.jl")

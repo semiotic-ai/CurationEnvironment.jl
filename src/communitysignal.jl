@@ -105,8 +105,11 @@ function step(model::CommunitySignal, π::F, c::Curator, s::Subgraph) where {F<:
     newshares = shares(model, x, s)
     M = length(c.ses)
     newses = ntuple(i -> i == s.id ? c.ses[i] + newshares : c.ses[i], Val(M))
-    cout = Curator{M}(c.id, c.v̂s, newses, c.σ - p)
+    c = @set c.ses = newses
+    c = @set c.σ = c.σ - p
+    s = @set s.v = s.v + p
+    s = @set s.s = s.s + newshares
     sout = Subgraph(s.id, s.v + p, s.s + newshares, s.τ)
 
-    return cout, sout
+    return c, s
 end

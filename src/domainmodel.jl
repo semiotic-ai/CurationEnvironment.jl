@@ -11,12 +11,12 @@ struct Curator{M}
     σ::Real
 
     @doc """
-        Curator{M}(id::Integer, ̂vs::NTuple{M, Real}, ses::NTuple{M, Real}, σ::Real)
+    Curator{M}(id::Integer, ̂vs::NTuple{M, Real}, ses::NTuple{M, Real}, σ::Real)
 
-    `Curator` is an entity that signals tokens on subgraph to demonstrate the value of the subgraph
-    to indexers. Curators are paid via query fees when on a subgraph.
-    Curator `id` estimates the subgraph valuations as `v̂s` and owns `ses`
-    minted tokens on each subgraph. The curator has `σ` stake to spend.
+`Curator` is an entity that signals tokens on subgraph to demonstrate the value of the subgraph
+to indexers. Curators are paid via query fees when on a subgraph.
+Curator `id` estimates the subgraph valuations as `v̂s` and owns `ses`
+minted tokens on each subgraph. The curator has `σ` stake to spend.
     """
     function Curator{M}(
         id::Integer, v̂s::NTuple{M,Real}, ses::NTuple{M,Real}, σ::Real
@@ -28,6 +28,18 @@ struct Curator{M}
             throw(ArgumentError("Curator stake must be 0 or greater."))
         end
         return new{M}(id, v̂s, ses, σ)
+    end
+
+    @doc """
+    Curator(id::Integer, ̂vs::NTuple{M, Real}, ses::NTuple{M, Real}, σ::Real)
+
+Create a `Curator` without specifying the number of subgraphs.
+    """
+    function Curator(id::Integer, v̂s::Tuple{Real}, ses::Tuple{Real}, σ::Real)
+        if id < 1
+            throw(ArgumentError("Curator id must be 1 or greater."))
+        end
+        return Curator{length(ses)}(id, v̂s, ses, σ)
     end
 
     @doc """
