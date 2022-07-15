@@ -111,7 +111,8 @@
             v̂ = 100
             τ = 0.0
             x = 0.0
-            popt = CurationEnvironment.best_response(model, v, v̂, τ, x)
+            σ = 1000.0
+            popt = CurationEnvironment.best_response(model, v, v̂, τ, x, σ)
             @test popt == 0.0
 
             # The greater v̂ is than v, curate more
@@ -119,7 +120,8 @@
             v̂s = [100, 150, 200]
             τ = 0.01
             x = 0.0
-            popts = CurationEnvironment.best_response.(model, v, v̂s, τ, x)
+            σ = 1000.0
+            popts = CurationEnvironment.best_response.(model, v, v̂s, τ, x, σ)
             @test issorted(popts)
 
             # The lesser v̂ is than v, burn more
@@ -127,7 +129,8 @@
             v̂s = [75, 50, 25]
             τ = 0.01
             x = 0.5
-            popts = CurationEnvironment.best_response.(model, v, v̂s, τ, x)
+            σ = 1000.0
+            popts = CurationEnvironment.best_response.(model, v, v̂s, τ, x, σ)
             @test issorted(popts; rev=true)
 
             # The greater τ is, the less I will curate for the same v and v̂
@@ -135,8 +138,18 @@
             v̂ = 200
             x = 0.0
             τs = [0.0, 0.01, 0.1, 0.5]
-            popts = CurationEnvironment.best_response.(model, v, v̂, τs, x)
+            σ = 1000.0
+            popts = CurationEnvironment.best_response.(model, v, v̂, τs, x, σ)
             @test issorted(popts; rev=true)
+
+            # Don't try to stake more than you have.
+            v = 100
+            v̂ = 1000
+            τ = 0.0
+            x = 0.0
+            σ = 5
+            popt = CurationEnvironment.best_response(model, v, v̂, τ, x, σ)
+            @test popt == 5.0
         end
 
         @testset "domain model method" begin
