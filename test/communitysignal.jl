@@ -106,21 +106,21 @@
 
     @testset "best_response" begin
         @testset "direct method" begin
-            # # If v̂ = v, don't curate the subgraph
-            # v = 100
-            # v̂ = 100
-            # τ = 0.0
-            # x = 0.0
-            # popt = CurationEnvironment.best_response(model, v, v̂, τ, x)
-            # @test popt == 0.0
+            # If v̂ = v, don't curate the subgraph
+            v = 100
+            v̂ = 100
+            τ = 0.0
+            x = 0.0
+            popt = CurationEnvironment.best_response(model, v, v̂, τ, x)
+            @test popt == 0.0
 
-            # # The greater v̂ is than v, curate more
-            # v = 100
-            # v̂s = [100, 150, 200]
-            # τ = 0.01
-            # x = 0.0
-            # popts = CurationEnvironment.best_response.(model, v, v̂s, τ, x)
-            # @test issorted(popts)
+            # The greater v̂ is than v, curate more
+            v = 100
+            v̂s = [100, 150, 200]
+            τ = 0.01
+            x = 0.0
+            popts = CurationEnvironment.best_response.(model, v, v̂s, τ, x)
+            @test issorted(popts)
 
             # The lesser v̂ is than v, burn more
             v = 100
