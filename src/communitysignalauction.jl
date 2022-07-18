@@ -74,15 +74,14 @@ subgraph. The curators `cs` make `bids` on the subgraph `s`.
 function auction(
     m::CommunitySignalAuction, bids::Vector{T}, cs::Vector{C}, s::Subgraph
 ) where {T<:Real,C<:Curator}
-    numbids = sum(findall(bids .> 0))
+    numbids = sum(bids .> 0)
 
     (ncs, ns) = @match numbids begin
         1 => single_bidder(m, bids, cs, s)
-        if numbids > 2
+        if numbids > 1
         end => multiple_bidders(m, bids, cs, s)
         _ => (cs, s)
     end
-
     return ncs, ns
 end
 
