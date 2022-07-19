@@ -14,17 +14,25 @@
     @testset "Subgraph" begin
         # If id < 1, should throw an ArgumentError
         @test_throws ArgumentError CurationEnvironment.Subgraph(0, 100, 1, 0)
-
-        # If v < 0, should throw an ArgumentError
-        @test_throws ArgumentError CurationEnvironment.Subgraph(1, -1, 1, 0)
-
-        # If s < 0, should throw an ArgumentError
-        @test_throws ArgumentError CurationEnvironment.Subgraph(1, 100, -1, 0)
     end
 
     model = CurationEnvironment.CommunitySignal()
     @testset "payment" begin
         @testset "direct method" begin
+            # Example
+            τ = 0
+            x = 1 / 3
+            v = 300
+            p = CurationEnvironment.payment(model, x, v, τ)
+            @test p ≈ 150
+
+            # Negative proportion, τ doesn't apply
+            τ = 0
+            x = -1 / 3
+            v = 300
+            p = CurationEnvironment.payment(model, x, v, τ)
+            @test p ≈ -100
+
             # If τ = 0 and I want half of the shares, I'll need to double the signal.
             τ = 0
             x = 0.5
@@ -94,6 +102,22 @@
 
     @testset "shares" begin
         @testset "direct method" begin
+            # Example
+            x = 1 / 3
+            s = 300
+            v = 300
+            τ = 0.0
+            ns = CurationEnvironment.shares(model, x, s, v, τ)
+            @test ns ≈ 150
+
+            # Negative proportion
+            x = -1 / 3
+            s = 300
+            v = 300
+            τ = 0.0
+            ns = CurationEnvironment.shares(model, x, s, v, τ)
+            @test ns ≈ -100
+
             # If you don't stake more, you don't mint new shares
             x = 0
             s = 100

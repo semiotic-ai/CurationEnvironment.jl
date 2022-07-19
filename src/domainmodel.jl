@@ -78,12 +78,6 @@ struct Subgraph
         if id < 1
             throw(ArgumentError("Subgraph id must be 1 or greater."))
         end
-        if v < 0
-            throw(ArgumentError("Subgraph signal must be 0 or greater."))
-        end
-        if s < 0
-            throw(ArgumentError("Subgraph shares must be 0 or greater."))
-        end
         return new(id, v, s, τ)
     end
 end
@@ -91,13 +85,16 @@ end
 """
     payment(::CurationModel, x::Number, v::Number, τ::Number)
 
-The payment needed to capture `x` proportion of the equity for a subgraph
+The payment needed to capture or burn `x` proportion of the equity for a subgraph
 with valuation `v` and tax rate `τ`.
 """
 function payment(::CurationModel, x::Number, v::Number, τ::Number)
-    buyout_tax = τ * x * v
-    equity_deposit = (x * v * (1 + τ * x)) / (1 - x)
-    return buyout_tax + equity_deposit
+    p = @match x begin
+        if x ≥ 0
+        end => (τ * x * v) + ((x * v * (1 + τ * x)) / (1 - x))
+        _ => x * v
+    end
+    return p
 end
 
 """
@@ -117,8 +114,12 @@ The proportion of equity on a subgraph with signal `v` the curator will
 receive by paying amount `p` with tax rate `τ`.
 """
 function equity_proportion(::CurationModel, p::Number, v::Number, τ::Number)
-    τ = p ≥ 0 ? τ : 0.0  # Don't apply tax when burning
-    return p / ((1 + τ) * v + p)
+    x = @match p begin
+        if p ≥ 0
+        end => p / ((1 + τ) * v + p)
+        _ => p / v
+    end
+    return x
 end
 
 """
@@ -138,7 +139,13 @@ How many new shares were minted when a curator executes a new transaction for
 equity proportion `x` on a subgraph with shares `s`, signal `v` and tax rate `τ`.
 """
 function shares(model::CurationModel, x::Number, s::Number, v::Number, τ::Number)
-    return (s / (1 - x) - s) + (s == 0) * payment(model, x, v, τ)
+    # prevent divide by zero when selling all shares on subgraph
+    shares = @match x begin
+        if x < 0
+        end => s * x
+        _ => (s * x / (1 - x)) + (s == 0) * payment(model, x, v, τ)
+    end
+    return shares
 end
 
 """

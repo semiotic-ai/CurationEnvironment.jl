@@ -139,6 +139,7 @@
     end
 
     @testset "burn" begin
+        # TODO
         cs = [
             CurationEnvironment.Curator{1}(1, (0,), (10,), 90)
             CurationEnvironment.Curator{1}(2, (110,), (0,), 50)
@@ -159,7 +160,7 @@
         ]
         s = CurationEnvironment.Subgraph(1, 100, 10, 0.0)
         cs, s = CurationEnvironment.step(model, πs, cs, s)
-        @test cs[1].ses[1] == 1
+        @test cs[1].ses[1] ≈ 1
         @test cs[1].σ ≈ 90
         @test cs[2].ses[1] == 9.5
         @test cs[2].σ ≈ 55
