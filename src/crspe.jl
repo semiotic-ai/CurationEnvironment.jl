@@ -1,7 +1,31 @@
-export CRSPE
+export CRSPE, MinMaxCurator
 
+# struct MinMaxCurator{M} <: Curator{M}
+#     c::Curator
+#     v̂maxs::NTuple{M, Real}
+# end
+
+# @forward MinMaxCurator.c id, v̂s, ses, σ
+# v̂s(c::MinMaxCurator, v::Real, i) = @set c.c = v̂s(c.c, v, i)
+# ses(c::MinMaxCurator, v::Real, i) = @set c.c = ses(c.c, v, i)
+# σ(c::MinMaxCurator, v::Real) = @set c.c = σ(c.c, v)
+# v̂maxs(c::MinMaxCurator) = c.v̂maxs
+# v̂maxs(c::MinMaxCurator, i) = c.v̂maxs[i]
+# v̂maxs(c::MinMaxCurator, v::Real, i) = @set c.v̂maxs[i] = v
+
+"""
+A commit-reveal, second price auction has three stages:
+
+1. Bid: Each participant privately bids (perhaps multiple times) via hash
+commitment(s).
+2. Reveal: Bidders (optionally) deposit tokens equal to their bid with a
+hash verification.
+3. Allocate: The highest bidder is reimbursed the difference between their
+bid and the second highest bid and allocated shares in proportion to their
+payment. All others are reimbursed for their deposits.
+"""
 struct CRSPE <: Auction
-    model::CurationModel
+    model::Union{CurationModel,Auction}
 end
 
 @forward CRSPE.model payment, equity_proportion, shares, curate
@@ -26,14 +50,13 @@ function best_response(::CRSPE, v::Number, v̂::Number, τ::Number, x::Number, �
 end
 
 """
-    best_response(model::<:CRSPE, c::Curator, s::Subgraph)
+    best_response(m::CRSPE, c::Curator, s::Subgraph)
 
 Find the best response for curator `c` on subgraph `s`.
 """
-function best_response(model::CRSPE, c::Curator, s::Subgraph)
-    # If s.s r= 0, x is / 0
-    _s = s.s == 0 ? 1 : s.s
-    return best_response(model, s.v, c.v̂s[s.id], s.τ, c.ses[s.id] / _s, c.σ)
+function best_response(m::CRSPE, c::Curator, s::Subgraph)
+    _ς = ς(s) == 0 ? 1 : ς(s)
+    return best_response(m, v(s), v̂s(c, id(s)), τ(s), ςs(c, id(s)) / _ς, σ(c))
 end
 
 """

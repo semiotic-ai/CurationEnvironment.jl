@@ -68,8 +68,8 @@
         ps = [10, 0]
 
         cs, s = CurationEnvironment.single_bidder(model, ps, cs, s)
-        @test cs[1].ses[1] ≈ 10
-        @test cs[1].σ == 90
+        @test ςs(cs[1], 1) ≈ 10
+        @test σ(cs[1]) == 90
     end
 
     @testset "multiple_bidders" begin
@@ -81,8 +81,8 @@
         ps = [10, 5]
 
         cs, s = CurationEnvironment.multiple_bidders(model, ps, cs, s)
-        @test cs[1].ses[1] ≈ 5
-        @test cs[1].σ == 95
+        @test ςs(cs[1], 1) ≈ 5
+        @test σ(cs[1]) == 95
 
         # Test when there are two equally good bids, the winner is
         # the first one to bid.
@@ -94,8 +94,8 @@
         ps = [10, 10]
 
         cs, s = CurationEnvironment.multiple_bidders(model, ps, cs, s)
-        @test cs[1].ses[1] ≈ 10
-        @test cs[1].σ == 90
+        @test ςs(cs[1], 1) ≈ 10
+        @test σ(cs[1]) == 90
     end
 
     @testset "auction" begin
@@ -108,8 +108,8 @@
         ps = [10, 0]
 
         cs, s = CurationEnvironment.auction(model, ps, cs, s)
-        @test cs[1].ses[1] ≈ 10
-        @test cs[1].σ == 90
+        @test ςs(cs[1], 1) ≈ 10
+        @test σ(cs[1]) == 90
 
         # Multiple bids
         cs = [
@@ -120,8 +120,8 @@
         ps = [10, 5]
 
         cs, s = CurationEnvironment.auction(model, ps, cs, s)
-        @test cs[1].ses[1] ≈ 5
-        @test cs[1].σ == 95
+        @test ςs(cs[1], 1) ≈ 5
+        @test σ(cs[1]) == 95
 
         # No bids
         cs = [
@@ -132,14 +132,13 @@
         ps = [0, 0]
 
         cs, s = CurationEnvironment.auction(model, ps, cs, s)
-        @test cs[1].ses[1] ≈ 0
-        @test cs[1].σ == 100
-        @test cs[2].ses[1] ≈ 0
-        @test cs[2].σ == 50
+        @test ςs(cs[1], 1) ≈ 0
+        @test σ(cs[1]) == 100
+        @test ςs(cs[2], 1) ≈ 0
+        @test σ(cs[2]) == 50
     end
 
     @testset "burn" begin
-        # TODO
         cs = [
             CurationEnvironment.Curator{1}(1, (0,), (10,), 90)
             CurationEnvironment.Curator{1}(2, (110,), (0,), 50)
@@ -148,8 +147,8 @@
         ps = [-110, 0]
 
         cs, s = CurationEnvironment.burn(model, ps, cs, s)
-        @test cs[1].ses[1] ≈ 0
-        @test cs[1].σ == 200
+        @test ςs(cs[1], 1) ≈ 0
+        @test σ(cs[1]) == 200
     end
 
     @testset "step" begin
@@ -160,9 +159,9 @@
         ]
         s = CurationEnvironment.Subgraph(1, 100, 10, 0.0)
         cs, s = CurationEnvironment.step(model, πs, cs, s)
-        @test cs[1].ses[1] ≈ 1
-        @test cs[1].σ ≈ 90
-        @test cs[2].ses[1] == 9.5
-        @test cs[2].σ ≈ 55
+        @test ςs(cs[1], 1) ≈ 1
+        @test σ(cs[1]) ≈ 90
+        @test ςs(cs[2], 1) ≈ 9.5
+        @test σ(cs[2]) ≈ 55
     end
 end

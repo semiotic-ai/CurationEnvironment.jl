@@ -139,8 +139,8 @@
         p = 10
 
         c, s = CurationEnvironment.curate(model, p, c, s)
-        @test c.ses[1] ≈ 10
-        @test c.σ == 90
+        @test ςs(c, 1) ≈ 10
+        @test σ(c) == 90
     end
 
     @testset "best_response" begin
@@ -215,17 +215,17 @@
         s = CurationEnvironment.Subgraph(1, 100.0, 0.0, 0.0)
         π = CurationEnvironment.best_response
         nc, ns = CurationEnvironment.step(model, π, c, s)
-        @test nc.σ < c.σ
-        @test nc.ses[1] > c.ses[1]
-        @test ns.v > s.v
+        @test σ(nc) < σ(c)
+        @test ςs(nc, 1) > ςs(c, 1)
+        @test v(ns) > v(s)
 
         # If v̂ > v, we burn some tokens on the subgraph, which causes σ to decrease
         c = CurationEnvironment.Curator{1}(1, (0.0,), (1.0,), 100.0)
         s = CurationEnvironment.Subgraph(1, 100.0, 100.0, 0.0)
         π = CurationEnvironment.best_response
         nc, ns = CurationEnvironment.step(model, π, c, s)
-        @test nc.σ > c.σ
-        @test nc.ses[1] < c.ses[1]
-        @test ns.v < s.v
+        @test σ(nc) > σ(c)
+        @test ςs(nc, 1) < ςs(c, 1)
+        @test v(ns) < v(s)
     end
 end

@@ -3,7 +3,7 @@ export CommunitySignal
 struct CommunitySignal <: CurationModel end
 
 """
-    best_response(::<:CommunitySignal, v::Number, v̂::Number, τ::Number, x::Number)
+    best_response(::CommunitySignal, v::Number, v̂::Number, τ::Number, x::Number)
 
 Find the best response on the community signal model for a subgraph with signal `v`
 and tax rate `τ` given the curator believes the true value of the subgraph to be `v̂`.
@@ -25,14 +25,13 @@ function best_response(
 end
 
 """
-    best_response(model::<:CommunitySignal, c::Curator, s::Subgraph)
+    best_response(m::CommunitySignal, c::Curator, s::Subgraph)
 
 Find the best response for curator `c` on subgraph `s`.
 """
-function best_response(model::CommunitySignal, c::Curator, s::Subgraph)
-    # If s.s r= 0, x is / 0
-    _s = s.s == 0 ? 1 : s.s
-    return best_response(model, s.v, c.v̂s[s.id], s.τ, c.ses[s.id] / _s, c.σ)
+function best_response(m::CommunitySignal, c::Curator, s::Subgraph)
+    _ς = ς(s) == 0 ? 1 : ς(s)
+    return best_response(m, v(s), v̂s(c, id(s)), τ(s), ςs(c, id(s)) / _ς, σ(c))
 end
 
 """
@@ -68,7 +67,7 @@ The payment needed to capture `x` proportion of the equity for a subgraph
 `s`.
 """
 function payment(model::CommunitySignal, x::Number, s::Subgraph)
-    return payment(model, x, s.v, s.τ)
+    return payment(model, x, v(s), τ(s))
 end
 
 """
@@ -93,21 +92,21 @@ The proportion of equity on a subgraph `s` the curator will receive by
 paying amount `p`.
 """
 function equity_proportion(model::CommunitySignal, p::Number, s::Subgraph)
-    return equity_proportion(model, p, s.v, s.τ)
+    return equity_proportion(model, p, v(s), τ(s))
 end
 
 """
     shares(model::CommunitySignal, x::Number, s::Number, v::Number, τ::Number)
 
 How many new shares were minted when a curator executes a new transaction for
-equity proportion `x` on a subgraph with shares `s`, signal `v` and tax rate `τ`.
+equity proportion `x` on a subgraph with shares `ς`, signal `v` and tax rate `τ`.
 """
-function shares(model::CommunitySignal, x::Number, s::Number, v::Number, τ::Number)
+function shares(model::CommunitySignal, x::Number, ς::Number, v::Number, τ::Number)
     # prevent divide by zero when selling all shares on subgraph
     shares = @match x begin
         if x < 0
-        end => s * x
-        _ => (s * x / (1 - x)) + (s == 0) * payment(model, x, v, τ)
+        end => ς * x
+        _ => (ς * x / (1 - x)) + (ς == 0) * payment(model, x, v, τ)
     end
     return shares
 end
@@ -116,8 +115,8 @@ end
     shares(model::CommunitySignal, x::Number, s::Subgraph)
 
 How many new shares were minted when a curator executes a new transaction for
-equity proportion `x` on a subgraph with shares `s`.
+equity proportion `x` on a subgraph `s`.
 """
 function shares(model::CommunitySignal, x::Number, s::Subgraph)
-    return shares(model, x, s.s, s.v, s.τ)
+    return shares(model, x, ς(s), v(s), τ(s))
 end
