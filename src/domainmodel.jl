@@ -1,12 +1,17 @@
-@data CurationModel begin
-    CommunitySignal()
-    CommunitySignalAuction()
-end
+export Curator, Subgraph
 
-# These functions enable dot application of CurationModels in functions
+abstract type CurationModel end
+abstract type Auction end
+
+# These functions enable broadcasting of CurationModels in functions
 Base.length(::T) where {T<:CurationModel} = 1
 Base.iterate(model::T) where {T<:CurationModel} = (model, nothing)
 Base.iterate(model::T, state) where {T<:CurationModel} = nothing
+
+# These functions enable broadcasting of CurationModels in functions
+Base.length(::T) where {T<:Auction} = 1
+Base.iterate(model::T) where {T<:Auction} = (model, nothing)
+Base.iterate(model::T, state) where {T<:Auction} = nothing
 
 struct Curator{M}
     id::Integer
@@ -83,82 +88,6 @@ struct Subgraph
 end
 
 """
-    payment(::CurationModel, x::Number, v::Number, τ::Number)
-
-The payment needed to capture or burn `x` proportion of the equity for a subgraph
-with valuation `v` and tax rate `τ`.
-"""
-function payment(::CurationModel, x::Number, v::Number, τ::Number)
-    p = @match x begin
-        if x ≥ 0
-        end => (τ * x * v) + ((x * v * (1 + τ * x)) / (1 - x))
-        _ => x * v
-    end
-    return p
-end
-
-"""
-    payment(model::CurationModel, x::Number, s::Subgraph)
-
-The payment needed to capture `x` proportion of the equity for a subgraph
-`s`.
-"""
-function payment(model::CurationModel, x::Number, s::Subgraph)
-    return payment(model, x, s.v, s.τ)
-end
-
-"""
-    equity_proportion(::CurationModel, p::Number, v::Number, τ::Number)
-
-The proportion of equity on a subgraph with signal `v` the curator will
-receive by paying amount `p` with tax rate `τ`.
-"""
-function equity_proportion(::CurationModel, p::Number, v::Number, τ::Number)
-    x = @match p begin
-        if p ≥ 0
-        end => p / ((1 + τ) * v + p)
-        _ => p / v
-    end
-    return x
-end
-
-"""
-    equity_proportion(model::CurationModel, p::Number, s::Subgraph)
-
-The proportion of equity on a subgraph `s` the curator will receive by
-paying amount `p`.
-"""
-function equity_proportion(model::CurationModel, p::Number, s::Subgraph)
-    return equity_proportion(model, p, s.v, s.τ)
-end
-
-"""
-    shares(model::CurationModel, x::Number, s::Number, v::Number, τ::Number)
-
-How many new shares were minted when a curator executes a new transaction for
-equity proportion `x` on a subgraph with shares `s`, signal `v` and tax rate `τ`.
-"""
-function shares(model::CurationModel, x::Number, s::Number, v::Number, τ::Number)
-    # prevent divide by zero when selling all shares on subgraph
-    shares = @match x begin
-        if x < 0
-        end => s * x
-        _ => (s * x / (1 - x)) + (s == 0) * payment(model, x, v, τ)
-    end
-    return shares
-end
-
-"""
-    shares(model::CurationModel, x::Number, s::Subgraph)
-
-How many new shares were minted when a curator executes a new transaction for
-equity proportion `x` on a subgraph with shares `s`.
-"""
-function shares(model::CurationModel, x::Number, s::Subgraph)
-    return shares(model, x, s.s, s.v, s.τ)
-end
-
-"""
     curate(model::CurationModel, p::Real, c::Curator, s::Subgraph)
 
 A curator `c` curates tokens `p` on subgraph `s`.
@@ -166,8 +95,7 @@ A curator `c` curates tokens `p` on subgraph `s`.
 function curate(model::CurationModel, p::Real, c::Curator, s::Subgraph)
     newshares = shares(model, equity_proportion(model, p, s), s)
     M = length(c.ses)
-    newses = ntuple(i -> i == s.id ? c.ses[i] + newshares : c.ses[i], Val(M))
-    c = @set c.ses = newses
+    c = @set c.ses[s.id] += newshares
     c = @set c.σ = c.σ - p
     s = @set s.v = s.v + p
     s = @set s.s = s.s + newshares

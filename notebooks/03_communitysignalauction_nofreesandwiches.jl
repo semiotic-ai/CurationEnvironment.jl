@@ -144,12 +144,12 @@ begin
         xlims=(1, 10),
         xticks=1:10,
     )
-    ms = map(t -> em.(t, c), τs)
-    plot!(ms[i])
-    # for (i, t) in enumerate(τs[2:end])
-    # 	plot!(vs[i+1]; label="τ=$t")
-    # end
-    # current()
+    # ms = map(t -> em.(t, c), τs)
+    # plot!(ms[i])
+    for (i, t) in enumerate(τs[2:end])
+        plot!(vs[i + 1]; label="τ=$t")
+    end
+    current()
 end
 
 # ╔═╡ 9d313768-6dfe-49b2-9f71-a12ac2794e06

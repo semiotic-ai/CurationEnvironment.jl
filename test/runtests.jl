@@ -4,5 +4,5 @@ using Test
 @testset "CurationEnvironment.jl" begin
     include("domainmodel.jl")
     include("communitysignal.jl")
-    include("communitysignalauction.jl")
+    include("crspe.jl")
 end

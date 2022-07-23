@@ -1,5 +1,5 @@
 @testset "communitysignalauction" begin
-    model = CurationEnvironment.CommunitySignalAuction()
+    model = CurationEnvironment.CRSPE(CurationEnvironment.CommunitySignal())
 
     @testset "best_response" begin
         @testset "direct method" begin
