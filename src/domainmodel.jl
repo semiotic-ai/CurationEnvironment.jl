@@ -1,8 +1,17 @@
-export CurationModel, Auction, Curator, Subgraph
+export CurationModel, Auction, Model
+export Transaction, mint, burn
+export Curator, Subgraph
 export id, v̂s, ςs, σ, v, ς, τ
 
 abstract type CurationModel end
 abstract type Auction end
+
+const Model = Union{CurationModel,Auction}
+
+@enum Transaction begin
+    mint = 1
+    burn = -1
+end
 
 # These functions enable broadcasting of CurationModels in functions
 Base.length(::T) where {T<:CurationModel} = 1

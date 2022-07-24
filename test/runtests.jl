@@ -5,4 +5,5 @@ using Test
     include("domainmodel.jl")
     include("communitysignal.jl")
     include("crspe.jl")
+    include("doublecrspe.jl")
 end

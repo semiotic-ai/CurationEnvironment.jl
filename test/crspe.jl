@@ -66,8 +66,8 @@
         ]
         s = CurationEnvironment.Subgraph(1, 100, 0, 0.0)
         ps = [10, 0]
-
-        cs, s = CurationEnvironment.single_bidder(model, ps, cs, s)
+        t = mint
+        cs, s = CurationEnvironment.single_bidder(model, ps, cs, s, t)
         @test ςs(cs[1], 1) ≈ 10
         @test σ(cs[1]) == 90
     end
@@ -79,8 +79,8 @@
         ]
         s = CurationEnvironment.Subgraph(1, 100, 0, 0.0)
         ps = [10, 5]
-
-        cs, s = CurationEnvironment.multiple_bidders(model, ps, cs, s)
+        t = mint
+        cs, s = CurationEnvironment.multiple_bidders(model, ps, cs, s, t)
         @test ςs(cs[1], 1) ≈ 5
         @test σ(cs[1]) == 95
 
@@ -92,8 +92,8 @@
         ]
         s = CurationEnvironment.Subgraph(1, 100, 0, 0.0)
         ps = [10, 10]
-
-        cs, s = CurationEnvironment.multiple_bidders(model, ps, cs, s)
+        t = mint
+        cs, s = CurationEnvironment.multiple_bidders(model, ps, cs, s, t)
         @test ςs(cs[1], 1) ≈ 10
         @test σ(cs[1]) == 90
     end
@@ -106,8 +106,8 @@
         ]
         s = CurationEnvironment.Subgraph(1, 100, 0, 0.0)
         ps = [10, 0]
-
-        cs, s = CurationEnvironment.auction(model, ps, cs, s)
+        t = mint
+        cs, s = CurationEnvironment.auction(model, ps, cs, s, t)
         @test ςs(cs[1], 1) ≈ 10
         @test σ(cs[1]) == 90
 
@@ -118,8 +118,8 @@
         ]
         s = CurationEnvironment.Subgraph(1, 100, 0, 0.0)
         ps = [10, 5]
-
-        cs, s = CurationEnvironment.auction(model, ps, cs, s)
+        t = mint
+        cs, s = CurationEnvironment.auction(model, ps, cs, s, t)
         @test ςs(cs[1], 1) ≈ 5
         @test σ(cs[1]) == 95
 
@@ -130,15 +130,15 @@
         ]
         s = CurationEnvironment.Subgraph(1, 100, 0, 0.0)
         ps = [0, 0]
-
-        cs, s = CurationEnvironment.auction(model, ps, cs, s)
+        t = mint
+        cs, s = CurationEnvironment.auction(model, ps, cs, s, t)
         @test ςs(cs[1], 1) ≈ 0
         @test σ(cs[1]) == 100
         @test ςs(cs[2], 1) ≈ 0
         @test σ(cs[2]) == 50
     end
 
-    @testset "burn" begin
+    @testset "burntokens" begin
         cs = [
             CurationEnvironment.Curator{1}(1, (0,), (10,), 90)
             CurationEnvironment.Curator{1}(2, (110,), (0,), 50)
@@ -146,7 +146,7 @@
         s = CurationEnvironment.Subgraph(1, 110, 10, 0.0)
         ps = [-110, 0]
 
-        cs, s = CurationEnvironment.burn(model, ps, cs, s)
+        cs, s = CurationEnvironment.burntokens(model, ps, cs, s)
         @test ςs(cs[1], 1) ≈ 0
         @test σ(cs[1]) == 200
     end
