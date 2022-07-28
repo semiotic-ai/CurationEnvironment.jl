@@ -1,3 +1,6 @@
+export Curator, MinMaxCurator
+export v̂s, ςs, σ, v̂mins, v̂maxs
+
 """
     Curator <: GraphEntity
 

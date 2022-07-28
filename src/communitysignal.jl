@@ -3,21 +3,18 @@ export CommunitySignal
 struct CommunitySignal <: CurationModel end
 
 """
-    best_response(::CommunitySignal, v::Number, v̂::Number, τ::Number, x::Number)
+    best_response(::CommunitySignal, v::Real, v̂::Real, τ::Real, ξ::Real, σ::Real)
 
 Find the best response on the community signal model for a subgraph with signal `v`
 and tax rate `τ` given the curator believes the true value of the subgraph to be `v̂`.
-The curator has the ratio `x` of the total shares on the subgraph and available stake
+The curator has the ratio `ξ` of the total shares on the subgraph and available stake
 `σ`.
 """
-function best_response(
-    ::CommunitySignal, v::Number, v̂::Number, τ::Number, x::Number, σ::Number
-)
+function best_response(::CommunitySignal, v::Real, v̂::Real, τ::Real, ξ::Real, σ::Real)
     # mint
-    # TODO: Should this also involve x? See communitysignalauction.best_response
     popt = max(√((1 + τ)v * v̂) - (1 + τ)v, 0)
     # burn
-    B = x * v  # token value of all equity
+    B = ξ * v  # token value of all equity
     bopt = -max(min((v - v̂) / 2, B), 0)
     p = popt + bopt
     p = σ - p ≥ 0 ? p : σ  # Don't spend more than you've got
@@ -35,7 +32,40 @@ function best_response(m::CommunitySignal, c::Curator, s::Subgraph)
 end
 
 """
-    step(mode::CommunitySignal, π::Function, c::Curator, s::Subgraph)::Tuple{Curator, Subgraph}
+    best_response(::CommunitySignal, v::Real, v̂min::Real, v̂max::Real τ::Real, ξ::Real, σ::Real)
+
+Find the best response on the community signal model for a subgraph with signal `v`
+and tax rate `τ` given the min-max curator believes the true value of the subgraph to be in
+the range `v̂min` and `v̂max`. The curator has the ratio `ξ` of the total shares on the
+subgraph and available stake `σ`.
+"""
+function best_response(
+    ::CommunitySignal, v::Real, v̂min::Real, v̂max::Real, τ::Real, ξ::Real, σ::Real
+)
+    # mint
+    popt = max(√((1 + τ)v * (v̂max + τ * ξ * v)) - (1 + τ)v, v̂min - v, 0)
+    # burn
+    B = ξ * v  # token value of all equity
+    bopt = -max(min((v - v̂min) / 2, B), 0)
+    p = popt + bopt
+    p = σ - p ≥ 0 ? p : σ  # Don't spend more than you've got
+    return p
+end
+
+"""
+    best_response(m::CommunitySignal, c::MinMaxCurator, s::Subgraph)
+
+Find the best response for the min-max curator `c` on subgraph `s`.
+"""
+function best_response(m::CommunitySignal, c::MinMaxCurator, s::Subgraph)
+    _ς = ς(s) == 0 ? 1 : ς(s)
+    return best_response(
+        m, v(s), v̂mins(c, id(s)), v̂maxs(c, id(s)), τ(s), ςs(c, id(s)) / _ς, σ(c)
+    )
+end
+
+"""
+    step(mode::CommunitySignal, π::Function, c::Curator, s::Subgraph)
 
 Curator `c` takes decides how much to curate on subgraph `s` by running the policy `π`.
 """
@@ -46,12 +76,12 @@ function step(model::CommunitySignal, π::F, c::Curator, s::Subgraph) where {F<:
 end
 
 """
-    payment(::CommunitySignal, x::Number, v::Number, τ::Number)
+    payment(::CommunitySignal, x::Real, v::Real, τ::Real)
 
 The payment needed to capture or burn `x` proportion of the equity for a subgraph
 with valuation `v` and tax rate `τ`.
 """
-function payment(::CommunitySignal, x::Number, v::Number, τ::Number)
+function payment(::CommunitySignal, x::Real, v::Real, τ::Real)
     p = @match x begin
         if x ≥ 0
         end => (τ * x * v) + ((x * v * (1 + τ * x)) / (1 - x))
@@ -61,22 +91,22 @@ function payment(::CommunitySignal, x::Number, v::Number, τ::Number)
 end
 
 """
-    payment(model::CommunitySignal, x::Number, s::Subgraph)
+    payment(model::CommunitySignal, x::Real, s::Subgraph)
 
 The payment needed to capture `x` proportion of the equity for a subgraph
 `s`.
 """
-function payment(model::CommunitySignal, x::Number, s::Subgraph)
+function payment(model::CommunitySignal, x::Real, s::Subgraph)
     return payment(model, x, v(s), τ(s))
 end
 
 """
-    equity_proportion(::CommunitySignal, p::Number, v::Number, τ::Number)
+    equity_proportion(::CommunitySignal, p::Real, v::Real, τ::Real)
 
 The proportion of equity on a subgraph with signal `v` the curator will
 receive by paying amount `p` with tax rate `τ`.
 """
-function equity_proportion(::CommunitySignal, p::Number, v::Number, τ::Number)
+function equity_proportion(::CommunitySignal, p::Real, v::Real, τ::Real)
     x = @match p begin
         if p ≥ 0
         end => p / ((1 + τ) * v + p)
@@ -86,22 +116,22 @@ function equity_proportion(::CommunitySignal, p::Number, v::Number, τ::Number)
 end
 
 """
-    equity_proportion(model::CommunitySignal, p::Number, s::Subgraph)
+    equity_proportion(model::CommunitySignal, p::Real, s::Subgraph)
 
 The proportion of equity on a subgraph `s` the curator will receive by
 paying amount `p`.
 """
-function equity_proportion(model::CommunitySignal, p::Number, s::Subgraph)
+function equity_proportion(model::CommunitySignal, p::Real, s::Subgraph)
     return equity_proportion(model, p, v(s), τ(s))
 end
 
 """
-    shares(model::CommunitySignal, x::Number, s::Number, v::Number, τ::Number)
+    shares(model::CommunitySignal, x::Real, s::Real, v::Real, τ::Real)
 
 How many new shares were minted when a curator executes a new transaction for
 equity proportion `x` on a subgraph with shares `ς`, signal `v` and tax rate `τ`.
 """
-function shares(model::CommunitySignal, x::Number, ς::Number, v::Number, τ::Number)
+function shares(model::CommunitySignal, x::Real, ς::Real, v::Real, τ::Real)
     # prevent divide by zero when selling all shares on subgraph
     shares = @match x begin
         if x < 0
@@ -112,11 +142,11 @@ function shares(model::CommunitySignal, x::Number, ς::Number, v::Number, τ::Nu
 end
 
 """
-    shares(model::CommunitySignal, x::Number, s::Subgraph)
+    shares(model::CommunitySignal, x::Real, s::Subgraph)
 
 How many new shares were minted when a curator executes a new transaction for
 equity proportion `x` on a subgraph `s`.
 """
-function shares(model::CommunitySignal, x::Number, s::Subgraph)
+function shares(model::CommunitySignal, x::Real, s::Subgraph)
     return shares(model, x, ς(s), v(s), τ(s))
 end

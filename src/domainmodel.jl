@@ -1,7 +1,7 @@
 export CurationModel, Auction, Model
 export Transaction, mint, burn
 export GraphEntity, Subgraph, Curator
-export id, v̂s, ςs, σ, τ, v, ς
+export id, τ, v, ς
 
 "Dynamics governing the interaction between a [`Subgraph`](@ref) and a [`Curator`](@ref)."
 abstract type CurationModel end

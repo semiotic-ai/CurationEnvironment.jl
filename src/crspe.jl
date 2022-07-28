@@ -13,37 +13,44 @@ hash verification.
 bid and the second highest bid and allocated shares in proportion to their
 payment. All others are reimbursed for their deposits.
 """
-struct CRSPE <: Auction
-    m::Model
+struct CRSPE{M<:Model} <: Auction
+    m::M
+
+    CRSPE{M}(m::M) where {M<:Model} = new(m)
+    CRSPE(m::M) where {M<:Module} = CRSPE{M}(m)
 end
 
 @forward CRSPE.m payment, equity_proportion, shares, curate
 
 """
-    best_response(::CRSPE, v::Number, v̂::Number, τ::Number, x::Number)
+    best_response(::CRSPE{CommunitySignal}, v::Real, v̂::Real, τ::Real, ξ::Real)
 
-Find the best response on the community signal auction model for a subgraph with signal
-`v` and tax rate `τ` given the curator believes the true value of the subgraph to be
-`v̂`. The curator has the ratio `x` of the total shares on the subgraph and available
-stake `σ`.
+Find the best response on the community signal model in a CRSPE auction for a subgraph with
+signal `v` and tax rate `τ` given the min-max curator believes the true value of the
+subgraph to be in the range `v̂min` and `v̂max`. The curator has the ratio `ξ` of the total
+shares on the subgraph and available stake `σ`.
 """
-function best_response(::CRSPE, v::Number, v̂::Number, τ::Number, x::Number, σ::Number)
+function best_response(
+    ::CRSPE{CommunitySignal}, v::Real, v̂min::Real, v̂max::Real, τ::Real, x::Real, σ::Real
+)
     # mint
-    popt = max(v̂ - (1 + τ * (1 - x)) * v, 0)
+    popt = max(√((1 + τ)v * (v̂max + τ * ξ * v)) - (1 + τ)v, v̂min - v, 0)
+    pmax = max(v̂max - (1 + τ(1 - ξ))v, 0)
+    pbid = (popt, pmin)
     # burn
     B = x * v  # token value of all equity
-    bopt = -max(min((v - v̂) / 2, B), 0)
-    p = popt + bopt
-    p = σ - p ≥ 0 ? p : σ  # Don't spend more than you've got
+    bopt = -max(min((v - v̂min) / 2, B), 0)
+    p = pbid .+ bopt
+    p = map(x -> x - σ ≥ 0 ? x : σ, p)  # Don't spend more than you've got
     return p
 end
 
 """
-    best_response(m::CRSPE, c::Curator, s::Subgraph)
+    best_response(m::CRSPE{CommunitySignal}, c::MinMaxCurator, s::Subgraph)
 
-Find the best response for curator `c` on subgraph `s`.
+Find the best response for the min-max curator `c` on subgraph `s`.
 """
-function best_response(m::CRSPE, c::Curator, s::Subgraph)
+function best_response(m::CRSPE{CommunitySignal}, c::MinMaxCurator, s::Subgraph)
     _ς = ς(s) == 0 ? 1 : ς(s)
     return best_response(m, v(s), v̂s(c, id(s)), τ(s), ςs(c, id(s)) / _ς, σ(c))
 end
@@ -65,6 +72,7 @@ function single_bidder(
     return cs, s
 end
 
+# TODO: Adapt multiple bidders to admit multiple bids per curator
 """
     multiple_bidders(m::CRSPE, bids::Vector{<:Real}, cs::Vector{<:Curator}, s::Subgraph)
 When there are multiple bidders, the bidder who is willing to pay the most pays the price of the
