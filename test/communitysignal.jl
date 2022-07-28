@@ -201,16 +201,16 @@
         end
 
         @testset "MinMaxCurator" begin
-            # best responses pushes v -> vmax
+            # best responses pushes v closer to vmax
             s = CurationEnvironment.Subgraph(1, 100.0, 0.0, 0.0)
             c = MinMaxCurator{1}(1, (100.0,), (150.0,), (0.0,), 100.0)
             popt = CurationEnvironment.best_response(model, c, s)
-            @test popt == 50.0
+            @test popt ≈ √(150 * 100) - 100
 
             s = CurationEnvironment.Subgraph(1, 100.0, 0.0, 0.0)
             c = MinMaxCurator{1}(1, (50.0,), (150.0,), (0.0,), 100.0)
             popt = CurationEnvironment.best_response(model, c, s)
-            @test popt == 50.0
+            @test popt ≈ √(150 * 100) - 100
         end
     end
 

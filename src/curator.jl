@@ -70,7 +70,7 @@ v̂s(c::Curator, v::Real, i) = @set c.v̂s[i] = v
 σ(c::Curator, v::Real) = @set c.σ = v
 
 """
-   MinMaxCurator{M}(id::Integer, ̂vmaxs::NTuple{M, Real}, v̂mins::NTuple{M, Real}, ςs::NTuple{M, Real}, σ::Real)
+   MinMaxCurator{M}(id::Integer, v̂mins::NTuple{M, Real}, ̂vmaxs::NTuple{M, Real}, ςs::NTuple{M, Real}, σ::Real)
 
 `MinMaxCurator` is a [`Curator`](@ref) that has both a minimum valuation for each subgraph
 `v̂mins` and a maximum valuation per subgraph `v̂maxs`. Intuitively, `v̂min` for a subgraph is
@@ -84,8 +84,8 @@ struct MinMaxCurator{M} <: GraphEntity
 
     function MinMaxCurator{M}(
         id::Integer,
-        v̂maxs::NTuple{M,Real},
         v̂mins::NTuple{M,Real},
+        v̂maxs::NTuple{M,Real},
         ςs::NTuple{M,Real},
         σ::Real,
     ) where {M}
