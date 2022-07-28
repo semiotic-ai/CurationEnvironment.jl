@@ -1,13 +1,17 @@
 @testset "domainmodel" begin
     @testset "Curator" begin
         # If id < 1, should throw an ArgumentError
-        @test_throws ArgumentError CurationEnvironment.Curator{1}(0, (100,), (0,), 100.0)
+        @test_throws ArgumentError CurationEnvironment.Curator{1}(
+            0, (100.0,), (0.0,), 100.0
+        )
 
         # If σ < 0, should throw an ArgumentError
-        @test_throws ArgumentError CurationEnvironment.Curator{1}(1, (100,), (0,), -100.0)
+        @test_throws ArgumentError CurationEnvironment.Curator{1}(
+            1, (100.0,), (0.0,), -100.0
+        )
 
         # If only provided one number for v̂s and for xs, repeat that number to fill a tuple.
-        c = CurationEnvironment.Curator{5}(1, 100, 0, 100.0)
+        c = CurationEnvironment.Curator{5}(1, 100.0, 0.0, 100.0)
         @test length(c.v̂s) == 5
     end
 

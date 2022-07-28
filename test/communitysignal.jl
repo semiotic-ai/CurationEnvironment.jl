@@ -39,7 +39,7 @@
         end
 
         @testset "domain model method" begin
-            s = CurationEnvironment.Subgraph(1, 100, 1, 0.0)
+            s = CurationEnvironment.Subgraph(1, 100.0, 1.0, 0.0)
             x = 0.5
             @test CurationEnvironment.payment(model, x, s) == 100
         end
@@ -77,7 +77,7 @@
         end
 
         @testset "domain model method" begin
-            s = CurationEnvironment.Subgraph(1, 100, 1, 0.0)
+            s = CurationEnvironment.Subgraph(1, 100.0, 1.0, 0.0)
             p = 100
             @test CurationEnvironment.equity_proportion(model, p, s) == 0.5
         end
@@ -127,15 +127,15 @@
         end
 
         @testset "domain model method" begin
-            s = CurationEnvironment.Subgraph(1, 100, 1, 0.0)
+            s = CurationEnvironment.Subgraph(1, 100.0, 1.0, 0.0)
             x = 0.0
             @test CurationEnvironment.shares(model, x, s) == 0
         end
     end
 
     @testset "curate" begin
-        c = CurationEnvironment.Curator{1}(1, (110,), (0,), 100)
-        s = CurationEnvironment.Subgraph(1, 100, 0, 0.0)
+        c = CurationEnvironment.Curator{1,Int64,Float64}(1, (110.0,), (0.0,), 100.0)
+        s = CurationEnvironment.Subgraph(1, 100.0, 0.0, 0.0)
         p = 10
 
         c, s = CurationEnvironment.curate(model, p, c, s)
@@ -194,7 +194,7 @@
         @testset "domain model method" begin
             # If v̂ = v, don't curate the subgraph.
             # This test also ensures good behaviour when s.s = 0
-            s = CurationEnvironment.Subgraph(1, 100, 0, 0.0)
+            s = CurationEnvironment.Subgraph(1, 100.0, 0.0, 0.0)
             c = CurationEnvironment.Curator{1}(1, (100,), (0,), 100)
             popt = CurationEnvironment.best_response(model, c, s)
             @test popt == 0.0

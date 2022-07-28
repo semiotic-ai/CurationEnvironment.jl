@@ -41,7 +41,7 @@ executed together. This may be a bad assumption as burning can happen between
 auctions, whereas minting can only happen at discrete intervals with auctions.
 """
 function step(
-    m::CRSPE, πs::Vector{F}, cs::Vector{C}, s::Subgraph
+    m::DoubleCRSPE, πs::Vector{F}, cs::Vector{C}, s::Subgraph
 ) where {F<:Function,C<:Curator}
     # Act per policy
     ps = map((π, c) -> π(m, c, s), πs, cs)
@@ -54,3 +54,5 @@ function step(
 
     return cs, s
 end
+
+# TODO: Plot utility over time
