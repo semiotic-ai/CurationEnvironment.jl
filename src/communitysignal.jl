@@ -1,22 +1,35 @@
-export CommunitySignal
+export CommunitySignal, latefees
 
 struct CommunitySignal <: CurationModel end
 
+"The optimal value to burn."
+bopt(::CommunitySignal, v::Real, v̂::Real, ξ::Real) = -max(min((v - v̂) / 2, ξ * v), 0)
+
+"The optimal value to mint."
+popt(::CommunitySignal, v::Real, v̂::Real, τ::Real) = max(√((1 + τ)v * v̂) - (1 + τ)v, 0)
+function popt(::CommunitySignal, v::Real, v̂min::Real, v̂max::Real, τ::Real, ξ::Real)
+    γ⁺ = √((1 + τ)v * ((1 - ξ)v̂max + τ * ξ * v)) - (1 + τ)v
+    γ⁻ = √(v * v̂max) - v
+    ρ = @match γ⁺, γ⁻ begin
+        if γ⁺ > 0
+        end => γ⁺
+        if γ⁻ ≤ 0
+        end => γ⁻
+        _ => 0
+    end
+    return max(ρ, v̂min - v, -ξ * v)
+end
+
 """
-    best_response(::CommunitySignal, v::Real, v̂::Real, τ::Real, ξ::Real, σ::Real)
+    best_response(m::CommunitySignal, v::Real, v̂::Real, τ::Real, ξ::Real, σ::Real)
 
 Find the best response on the community signal model for a subgraph with signal `v`
 and tax rate `τ` given the curator believes the true value of the subgraph to be `v̂`.
 The curator has the ratio `ξ` of the total shares on the subgraph and available stake
 `σ`.
 """
-function best_response(::CommunitySignal, v::Real, v̂::Real, τ::Real, ξ::Real, σ::Real)
-    # mint
-    popt = max(√((1 + τ)v * v̂) - (1 + τ)v, 0)
-    # burn
-    B = ξ * v  # token value of all equity
-    bopt = -max(min((v - v̂) / 2, B), 0)
-    p = popt + bopt
+function best_response(m::CommunitySignal, v::Real, v̂::Real, τ::Real, ξ::Real, σ::Real)
+    p = popt(m, v, v̂, τ) + bopt(m, v, v̂, ξ)
     p = σ - p ≥ 0 ? p : σ  # Don't spend more than you've got
     return p
 end
@@ -27,12 +40,12 @@ end
 Find the best response for curator `c` on subgraph `s`.
 """
 function best_response(m::CommunitySignal, c::Curator, s::Subgraph)
-    _ς = ς(s) == 0 ? 1 : ς(s)
-    return best_response(m, v(s), v̂s(c, id(s)), τ(s), ςs(c, id(s)) / _ς, σ(c))
+    return best_response(m, v(s), v̂s(c, id(s)), τ(s), ςs(c, id(s)) / ς(s), σ(c))
 end
 
 """
-    best_response(::CommunitySignal, v::Real, v̂min::Real, v̂max::Real τ::Real, ξ::Real, σ::Real)
+    best_response(m::CommunitySignal, v::Real, v̂min::Real,
+                  v̂max::Real τ::Real, ξ::Real, σ::Real)
 
 Find the best response on the community signal model for a subgraph with signal `v`
 and tax rate `τ` given the min-max curator believes the true value of the subgraph to be in
@@ -40,14 +53,9 @@ the range `v̂min` and `v̂max`. The curator has the ratio `ξ` of the total sha
 subgraph and available stake `σ`.
 """
 function best_response(
-    ::CommunitySignal, v::Real, v̂min::Real, v̂max::Real, τ::Real, ξ::Real, σ::Real
+    m::CommunitySignal, v::Real, v̂min::Real, v̂max::Real, τ::Real, ξ::Real, σ::Real
 )
-    # mint
-    popt = max(√((1 + τ)v * (v̂max + τ * ξ * v)) - (1 + τ)v, v̂min - v, 0)
-    # burn
-    B = ξ * v  # token value of all equity
-    bopt = -max(min((v - v̂min) / 2, B), 0)
-    p = popt + bopt
+    p = popt(m, v, v̂min, v̂max, τ, ξ)
     p = σ - p ≥ 0 ? p : σ  # Don't spend more than you've got
     return p
 end
@@ -58,21 +66,80 @@ end
 Find the best response for the min-max curator `c` on subgraph `s`.
 """
 function best_response(m::CommunitySignal, c::MinMaxCurator, s::Subgraph)
-    _ς = ς(s) == 0 ? 1 : ς(s)
     return best_response(
-        m, v(s), v̂mins(c, id(s)), v̂maxs(c, id(s)), τ(s), ςs(c, id(s)) / _ς, σ(c)
+        m, v(s), v̂mins(c, id(s)), v̂maxs(c, id(s)), τ(s), ςs(c, id(s)) / ς(s), σ(c)
     )
 end
 
 """
-    step(mode::CommunitySignal, π::Function, c::Curator, s::Subgraph)
+    utility(m::CommunitySignal, p::Real, v̂min::Real, v̂max::Real, v::Real, τ::Real, ξ::Real)
 
-Curator `c` takes decides how much to curate on subgraph `s` by running the policy `π`.
+Utility on for payment `p` for the min-max curator `c` for model `m` for a subgraph with
+signal `v` and tax rate `τ` given the min-max curator believes the true value of the
+subgraph to be in the range `v̂min` and `v̂max`. The curator has the ratio `ξ` of the total
+shares on the subgraph and available stake `σ`.
 """
-function step(model::CommunitySignal, π::F, c::Curator, s::Subgraph) where {F<:Function}
-    p = π(model, c, s)
-    c, s = curate(model, p, c, s)
+function utility(
+    m::CommunitySignal, p::Real, v̂min::Real, v̂max::Real, v::Real, τ::Real, ξ::Real
+)
+    δᵥ = v + p ≥ v̂min ? 0 : Inf
+    δₓ = p ≥ -ξ * v ? 0 : Inf
+    if p ≥ 0
+        x = equity_proportion(m, p, v, τ)
+        return x * ((1 - ξ) * v̂max + τ * ξ * v) - p - δᵥ
+    else
+        return ((p * v̂max) / (v + p)) - p - δᵥ - δₓ
+    end
+end
+
+"""
+    utility(m::CommunitySignal, p::Real, c::MinMaxCurator, s::Subgraph)
+
+Utility on for payment `p` on subgraph `s` for the min-max curator `c` for model `m`.
+"""
+function utility(m::CommunitySignal, p::Real, c::MinMaxCurator, s::Subgraph)
+    return utility(m, p, v̂min(c, id(s)), v̂max(c, id(s)), v(s), τ(s), ςs(c, id(s)) / ς(s))
+end
+
+latefees(::CommunitySignal, x::Real, v::Real, τ::Real) = x ≥ 0 ? x * v * τ : 0.0
+
+"""
+    latefees(m::CommunitySignal, p::Real, s::Subgraph)
+
+The late fees a curator makes for paying `p` on subgraph `s`.
+"""
+function latefees(m::CommunitySignal, p::Real, s::Subgraph)
+    return latefees(m, equity_proportion(m, p, v(s), τ(s)), v(s), τ(s))
+end
+
+"""
+    step(m::CommunitySignal, π::Function, c::AbstractCurator, s::Subgraph)
+
+Curator `c` decides how much to curate on subgraph `s` by running the policy `π`.
+"""
+function step(m::CommunitySignal, π::F, c::AbstractCurator, s::Subgraph) where {F<:Function}
+    p = π(m, c, s)
+    c, s = curate(m, p, c, s)
     return c, s
+end
+
+"""
+    step(m::CommunitySignal, π::Function, c::Tuple{AbstractCurator}, s::Subgraph)
+
+Curators `cs` decide how much to curate on subgraph `s` by running the policy `π`.
+
+Note that the order in which the curators execute is randomised each time `step` is called.
+"""
+function step(
+    m::CommunitySignal, π::F, cs::Tuple{Vararg{A}}, s::Subgraph
+) where {F<:Function,A<:AbstractCurator}
+    is = randperm(length(cs))  # Order of curators in each step is random
+    for i in is
+        c = cs[i]
+        c, s = step(m, π, c, s)
+        cs = @set cs[i] = c
+    end
+    return cs, s
 end
 
 """

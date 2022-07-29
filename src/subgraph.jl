@@ -33,7 +33,7 @@ struct Subgraph{S<:Integer,T<:Real} <: GraphEntity
 end
 
 v(s::Subgraph) = s.v
-ς(s::Subgraph) = s.ς
+ς(s::Subgraph) = s.ς == 0 ? 1 : s.ς
 τ(s::Subgraph) = s.τ
 v(s::Subgraph, v::Real) = @set s.v = v
 ς(s::Subgraph, v::Real) = @set s.ς = v

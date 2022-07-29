@@ -45,7 +45,7 @@ A curator `c` curates tokens `p` on subgraph `s` as per model `m`.
 
 See also [`Subgraph`](@ref), [`Curator`](@ref), [`CurationModel`](@ref)
 """
-function curate(m::CurationModel, p::Real, c::Curator, s::Subgraph)
+function curate(m::CurationModel, p::Real, c::AbstractCurator, s::Subgraph)
     newshares = shares(m, equity_proportion(m, p, s), s)
     M = length(ςs(c))
     c = ςs(c, ςs(c, id(s)) + newshares, id(s))

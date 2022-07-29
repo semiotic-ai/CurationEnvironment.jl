@@ -134,8 +134,8 @@
     end
 
     @testset "curate" begin
-        c = CurationEnvironment.Curator{1,Int64,Float64}(1, (110.0,), (0.0,), 100.0)
-        s = CurationEnvironment.Subgraph(1, 100.0, 0.0, 0.0)
+        c = CurationEnvironment.Curator{1,Int64,Float64}(1, (100.0,), (0.0,), 100.0)
+        s = CurationEnvironment.Subgraph(1, 1.0, 0.0, 0.0)
         p = 10
 
         c, s = CurationEnvironment.curate(model, p, c, s)
@@ -215,30 +215,48 @@
     end
 
     @testset "step" begin
-        # If the v̂ = v, the state of the network remains the same.
-        c = CurationEnvironment.Curator{1}(1, (100.0,), (0.0,), 100.0)
-        s = CurationEnvironment.Subgraph(1, 100.0, 0.0, 0.0)
-        π = CurationEnvironment.best_response
-        nc, ns = CurationEnvironment.step(model, π, c, s)
-        @test c == nc
-        @test s == ns
+        @testset "single curator" begin
+            # If the v̂ = v, the state of the network remains the same.
+            c = CurationEnvironment.Curator{1}(1, (100.0,), (0.0,), 100.0)
+            s = CurationEnvironment.Subgraph(1, 100.0, 1.0, 0.0)
+            π = CurationEnvironment.best_response
+            nc, ns = CurationEnvironment.step(model, π, c, s)
+            @test c == nc
+            @test s == ns
 
-        # If v̂ > v, we stake some tokens on the subgraph, which causes σ to decrease
-        c = CurationEnvironment.Curator{1}(1, (200.0,), (0.0,), 100.0)
-        s = CurationEnvironment.Subgraph(1, 100.0, 0.0, 0.0)
-        π = CurationEnvironment.best_response
-        nc, ns = CurationEnvironment.step(model, π, c, s)
-        @test σ(nc) < σ(c)
-        @test ςs(nc, 1) > ςs(c, 1)
-        @test v(ns) > v(s)
+            # If v̂ > v, we stake some tokens on the subgraph, which causes σ to decrease
+            c = CurationEnvironment.Curator{1}(1, (200.0,), (0.0,), 100.0)
+            s = CurationEnvironment.Subgraph(1, 100.0, 0.0, 0.0)
+            π = CurationEnvironment.best_response
+            nc, ns = CurationEnvironment.step(model, π, c, s)
+            @test σ(nc) < σ(c)
+            @test ςs(nc, 1) > ςs(c, 1)
+            @test v(ns) > v(s)
 
-        # If v̂ > v, we burn some tokens on the subgraph, which causes σ to decrease
-        c = CurationEnvironment.Curator{1}(1, (0.0,), (1.0,), 100.0)
-        s = CurationEnvironment.Subgraph(1, 100.0, 100.0, 0.0)
-        π = CurationEnvironment.best_response
-        nc, ns = CurationEnvironment.step(model, π, c, s)
-        @test σ(nc) > σ(c)
-        @test ςs(nc, 1) < ςs(c, 1)
-        @test v(ns) < v(s)
+            # If v̂ > v, we burn some tokens on the subgraph, which causes σ to decrease
+            c = CurationEnvironment.Curator{1}(1, (0.0,), (1.0,), 100.0)
+            s = CurationEnvironment.Subgraph(1, 100.0, 100.0, 0.0)
+            π = CurationEnvironment.best_response
+            nc, ns = CurationEnvironment.step(model, π, c, s)
+            @test σ(nc) > σ(c)
+            @test ςs(nc, 1) < ςs(c, 1)
+            @test v(ns) < v(s)
+        end
+
+        @testset "multiple curators" begin
+            t = τ(0.05)
+            m = CommunitySignal()
+            π = best_response
+            s = Subgraph(1, 500.0, 500.0, t)
+            ca = MinMaxCurator{1}(1, (1000.0,), (2500.0,), (0.0,), 10000.0)
+            cb = MinMaxCurator{1}(2, (500.0,), (4000.0,), (0.0,), 10000.0)
+            cc = MinMaxCurator{1}(3, (1500.0,), (2000.0,), (0.0,), 10000.0)
+            cd = MinMaxCurator{1}(4, (2750.0,), (3500.0,), (0.0,), 10000.0)
+            ce = MinMaxCurator{1}(5, (0.0,), (3000.0,), (0.0,), 10000.0)
+            cs = (ca, cb, cc, cd, ce)
+            cs, ns = CurationEnvironment.step(m, π, cs, s)
+            # The subgraph's signal should have increased
+            @test v(s) < v(ns)
+        end
     end
 end
