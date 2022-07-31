@@ -1,22 +1,7 @@
 @testset "domainmodel" begin
-    @testset "Curator" begin
-        # If id < 1, should throw an ArgumentError
-        @test_throws ArgumentError CurationEnvironment.Curator{1}(
-            0, (100.0,), (0.0,), 100.0
-        )
+    include("curator.jl")
+    include("subgraph.jl")
 
-        # If σ < 0, should throw an ArgumentError
-        @test_throws ArgumentError CurationEnvironment.Curator{1}(
-            1, (100.0,), (0.0,), -100.0
-        )
-
-        # If only provided one number for v̂s and for xs, repeat that number to fill a tuple.
-        c = CurationEnvironment.Curator{5}(1, 100.0, 0.0, 100.0)
-        @test length(c.v̂s) == 5
-    end
-
-    @testset "Subgraph" begin
-        # If id < 1, should throw an ArgumentError
-        @test_throws ArgumentError CurationEnvironment.Subgraph(0, 100, 1, 0)
-    end
+    @test τ(0.0) == 0.0
+    @test isapprox(τ(1000000), -1.0; atol=1e-5)
 end

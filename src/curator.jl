@@ -1,10 +1,22 @@
 export Curator, MinMaxCurator
 export v̂s, ςs, σ, v̂mins, v̂maxs
 
+"""
+`AbstractCurator` is the abstract type for all curators.
+
+All properties of an `AbstractCurator` will have an associated getter and setter.
+For example, the [`Curator`](@ref) concretion has methods: `id`, `v̂s`, `ςs`, and `σ`.
+If you pass in only the `AbstractCurator`, or for some fields, the `AbstractCurator`
+and an index `i`, then the method serves as a getter.
+If you pass in a value `v` in addition to the parameters of the getters, the method
+serves as a setter.
+
+See also [`Curator`](@ref)
+"""
 abstract type AbstractCurator <: GraphEntity end
 
 """
-    Curator <: AbstractCurator
+    Curator{M,S,T} <: AbstractCurator
 
 Signal tokens on a [`Subgraph`](@ref) as per a private valuation.
 
@@ -67,12 +79,12 @@ v̂s(c::Curator, i) = c.v̂s[i]
 ςs(c::Curator) = c.ςs
 ςs(c::Curator, i) = c.ςs[i]
 σ(c::Curator) = c.σ
-function v̂s(c::Curator, v::Real, i)
+function v̂s(c::Curator, i, v::Real)
     x = v̂s(c)
     x = @set x[i] = v
     return c = @set c.v̂s = x
 end
-function ςs(c::Curator, v::Real, i)
+function ςs(c::Curator, i, v::Real)
     x = ςs(c)
     x = @set x[i] = v
     return c = @set c.ςs = x
@@ -80,7 +92,7 @@ end
 σ(c::Curator, v::Real) = @set c.σ = v
 
 """
-    Curator <: AbstractCurator
+    MinMaxCurator{M,S,T} <: AbstractCurator
 
 A curator that has both a min and max valuation.
 
@@ -89,18 +101,40 @@ A curator that has both a min and max valuation.
 the minimum amount of signal you would want to see on a subgraph. `v̂max` is your true
 valuation of the subgraph. The other parameters are as given by [`Curator`](@ref).
 
+# Constructors
+
+```julia
+MinMaxCurator(
+    id::<:Integer,
+    v̂mins::NTuple{M,<:Real},
+    v̂maxs::NTuple{M,<:Real},
+    ςs::NTuple{M,<:Real},
+    σ::<:Real
+) where {M}
+
+MinMaxCurator{M,S,T}(
+    id::S,
+    v̂mins::NTuple{M,T},
+    v̂maxs::NTuple{M,T},
+    ςs::NTuple{M,T},
+    σ::T
+) where {M,S<:Integer,T<:Real}
+```
+
 """
-struct MinMaxCurator{M,T<:Real} <: AbstractCurator
-    c::Curator{M}
+struct MinMaxCurator{M,S<:Integer,T<:Real} <: AbstractCurator
+    c::Curator{M,S,T}
     v̂mins::NTuple{M,T}
 
-    function MinMaxCurator{M}(
-        id::Integer, v̂mins::NTuple{M,T}, v̂maxs::NTuple{M,T}, ςs::NTuple{M,T}, σ::Real
-    ) where {M,T<:Real}
-        return new{M,T}(Curator{M}(id, v̂maxs, ςs, σ), v̂mins)
+    function MinMaxCurator{M,S,T}(
+        id::Integer, v̂mins::NTuple{M,T}, v̂maxs::NTuple{M,T}, ςs::NTuple{M,T}, σ::T
+    ) where {M,S<:Integer,T<:Real}
+        return new{M,S,T}(Curator{M}(id, v̂maxs, ςs, σ), v̂mins)
     end
-    function MinMaxCurator(c::Curator{M}, v̂mins::NTuple{M,T}) where {M,T<:Real}
-        return new{M,T}(c, v̂mins)
+    function MinMaxCurator(
+        c::Curator{M,S,T}, v̂mins::NTuple{M,T}
+    ) where {M,S<:Integer,T<:Real}
+        return new{M,S,T}(c, v̂mins)
     end
 end
 
@@ -108,20 +142,20 @@ Lazy.@forward MinMaxCurator.c id, v̂s, ςs, σ
 
 v̂mins(c::MinMaxCurator) = c.v̂mins
 v̂mins(c::MinMaxCurator, i) = c.v̂mins[i]
-function v̂mins(c::MinMaxCurator, v::Real, i)
+function v̂mins(c::MinMaxCurator, i, v::Real)
     x = v̂mins(c)
     x = @set x[i] = v
     return c = @set c.v̂mins = x
 end
 v̂maxs(c::MinMaxCurator) = v̂s(c)
 v̂maxs(c::MinMaxCurator, i) = v̂s(c, i)
-v̂maxs(c::MinMaxCurator, v::Real, i) = v̂s(c, v, i)
-function v̂s(c::MinMaxCurator, v::Real, i)
-    x = v̂s(c.c, v, i)
-    return c = @set c.c = x
+v̂maxs(c::MinMaxCurator, i, v::Real) = v̂s(c, i, v)
+function v̂s(c::MinMaxCurator, i, v::Real)
+    x = v̂s(c.c, i, v)
+    return @set c.c = x
 end
-function ςs(c::MinMaxCurator, v::Real, i)
-    x = ςs(c.c, v, i)
+function ςs(c::MinMaxCurator, i, v::Real)
+    x = ςs(c.c, i, v)
     return c = @set c.c = x
 end
 σ(c::MinMaxCurator, v::Real) = @set c.c = σ(c.c, v)

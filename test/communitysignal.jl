@@ -1,5 +1,5 @@
 @testset "communitysignal" begin
-    model = CurationEnvironment.CommunitySignal()
+    model = CommunitySignal()
     @testset "payment" begin
         @testset "direct method" begin
             # Example
@@ -144,119 +144,119 @@
     end
 
     @testset "best_response" begin
-        @testset "direct method" begin
-            # If v̂ = v, don't curate the subgraph
-            v = 100
-            v̂ = 100
-            τ = 0.0
-            x = 0.0
-            σ = 1000.0
-            popt = CurationEnvironment.best_response(model, v, v̂, τ, x, σ)
-            @test popt == 0.0
-
-            # The greater v̂ is than v, curate more
-            v = 100
-            v̂s = [100, 150, 200]
-            τ = 0.01
-            x = 0.0
-            σ = 1000.0
-            popts = CurationEnvironment.best_response.(model, v, v̂s, τ, x, σ)
-            @test issorted(popts)
-
-            # The lesser v̂ is than v, burn more
-            v = 100
-            v̂s = [75, 50, 25]
-            τ = 0.01
-            x = 0.5
-            σ = 1000.0
-            popts = CurationEnvironment.best_response.(model, v, v̂s, τ, x, σ)
-            @test issorted(popts; rev=true)
-
-            # The greater τ is, the less I will curate for the same v and v̂
-            v = 100
-            v̂ = 200
-            x = 0.0
-            τs = [0.0, 0.01, 0.1, 0.5]
-            σ = 1000.0
-            popts = CurationEnvironment.best_response.(model, v, v̂, τs, x, σ)
-            @test issorted(popts; rev=true)
-
-            # Don't try to stake more than you have.
-            v = 100
-            v̂ = 1000
-            τ = 0.0
-            x = 0.0
-            σ = 5
-            popt = CurationEnvironment.best_response(model, v, v̂, τ, x, σ)
-            @test popt == 5.0
-        end
-
-        @testset "domain model method" begin
-            # If v̂ = v, don't curate the subgraph.
-            # This test also ensures good behaviour when s.s = 0
-            s = CurationEnvironment.Subgraph(1, 100.0, 0.0, 0.0)
-            c = CurationEnvironment.Curator{1}(1, (100,), (0,), 100)
-            popt = CurationEnvironment.best_response(model, c, s)
-            @test popt == 0.0
-        end
-
         @testset "MinMaxCurator" begin
             # best responses pushes v closer to vmax
             s = CurationEnvironment.Subgraph(1, 100.0, 0.0, 0.0)
-            c = MinMaxCurator{1}(1, (100.0,), (150.0,), (0.0,), 100.0)
+            c = MinMaxCurator{1,Int64,Float64}(1, (100.0,), (150.0,), (0.0,), 100.0)
             popt = CurationEnvironment.best_response(model, c, s)
             @test popt ≈ √(150 * 100) - 100
 
             s = CurationEnvironment.Subgraph(1, 100.0, 0.0, 0.0)
-            c = MinMaxCurator{1}(1, (50.0,), (150.0,), (0.0,), 100.0)
+            c = MinMaxCurator{1,Int64,Float64}(1, (50.0,), (150.0,), (0.0,), 100.0)
             popt = CurationEnvironment.best_response(model, c, s)
             @test popt ≈ √(150 * 100) - 100
         end
     end
 
     @testset "step" begin
-        @testset "single curator" begin
-            # If the v̂ = v, the state of the network remains the same.
-            c = CurationEnvironment.Curator{1}(1, (100.0,), (0.0,), 100.0)
-            s = CurationEnvironment.Subgraph(1, 100.0, 1.0, 0.0)
-            π = CurationEnvironment.best_response
-            nc, ns = CurationEnvironment.step(model, π, c, s)
-            @test c == nc
-            @test s == ns
-
-            # If v̂ > v, we stake some tokens on the subgraph, which causes σ to decrease
-            c = CurationEnvironment.Curator{1}(1, (200.0,), (0.0,), 100.0)
-            s = CurationEnvironment.Subgraph(1, 100.0, 0.0, 0.0)
-            π = CurationEnvironment.best_response
-            nc, ns = CurationEnvironment.step(model, π, c, s)
-            @test σ(nc) < σ(c)
-            @test ςs(nc, 1) > ςs(c, 1)
-            @test v(ns) > v(s)
-
-            # If v̂ > v, we burn some tokens on the subgraph, which causes σ to decrease
-            c = CurationEnvironment.Curator{1}(1, (0.0,), (1.0,), 100.0)
-            s = CurationEnvironment.Subgraph(1, 100.0, 100.0, 0.0)
-            π = CurationEnvironment.best_response
-            nc, ns = CurationEnvironment.step(model, π, c, s)
-            @test σ(nc) > σ(c)
-            @test ςs(nc, 1) < ςs(c, 1)
-            @test v(ns) < v(s)
-        end
-
         @testset "multiple curators" begin
             t = τ(0.05)
-            m = CommunitySignal()
             π = best_response
             s = Subgraph(1, 500.0, 500.0, t)
-            ca = MinMaxCurator{1}(1, (1000.0,), (2500.0,), (0.0,), 10000.0)
-            cb = MinMaxCurator{1}(2, (500.0,), (4000.0,), (0.0,), 10000.0)
-            cc = MinMaxCurator{1}(3, (1500.0,), (2000.0,), (0.0,), 10000.0)
-            cd = MinMaxCurator{1}(4, (2750.0,), (3500.0,), (0.0,), 10000.0)
-            ce = MinMaxCurator{1}(5, (0.0,), (3000.0,), (0.0,), 10000.0)
+            ca = MinMaxCurator{1,Int64,Float64}(1, (1000.0,), (2500.0,), (0.0,), 10000.0)
+            cb = MinMaxCurator{1,Int64,Float64}(2, (500.0,), (4000.0,), (0.0,), 10000.0)
+            cc = MinMaxCurator{1,Int64,Float64}(3, (1500.0,), (2000.0,), (0.0,), 10000.0)
+            cd = MinMaxCurator{1,Int64,Float64}(4, (2750.0,), (3500.0,), (0.0,), 10000.0)
+            ce = MinMaxCurator{1,Int64,Float64}(5, (0.0,), (3000.0,), (0.0,), 10000.0)
             cs = (ca, cb, cc, cd, ce)
-            cs, ns = CurationEnvironment.step(m, π, cs, s)
+            cs, ns = CurationEnvironment.step(model, π, cs, s)
             # The subgraph's signal should have increased
             @test v(s) < v(ns)
         end
+    end
+
+    @testset "latefees" begin
+        # Only apply in the case when we're minting
+        s = Subgraph(1, 500.0, 500.0, 0.05)
+        fees = latefees(model, -100, s)
+        @test fees == 0.0
+
+        # Minting case
+        fees = latefees(model, 0.1, 100.0, 0.05)
+        @test fees == 0.5
+    end
+
+    @testset "utility" begin
+        # Mint
+        c = MinMaxCurator{1,Int64,Float64}(1, (125.0,), (200.0,), (0.0,), 10000.0)
+        s = Subgraph(1, 100.0, 1.0, 0.0)
+        p = 50.0
+        u = utility(model, p, c, s)
+        @test u ≈ 16 + 2 / 3
+
+        # Pay less than v̂min
+        c = MinMaxCurator{1,Int64,Float64}(1, (125.0,), (200.0,), (0.0,), 10000.0)
+        s = Subgraph(1, 100.0, 1.0, 0.0)
+        p = 10.0
+        u = utility(model, p, c, s)
+        @test u ≈ -Inf
+
+        # The utility hinges around v̂max
+        c = MinMaxCurator{1,Int64,Float64}(1, (125.0,), (200.0,), (0.0,), 10000.0)
+        s = Subgraph(1, 100.0, 1.0, 0.0)
+        p = 100.0
+        u = utility(model, p, c, s)
+        @test u == 0.0
+
+        # Burn
+        c = MinMaxCurator{1,Int64,Float64}(1, (125.0,), (200.0,), (0.5,), 10000.0)
+        s = Subgraph(1, 200.0, 1.0, 0.0)
+        p = -10
+        u = utility(model, p, c, s)
+        @test u ≈ -2000 / (190) + 10
+    end
+
+    @testset "popt" begin
+        # γ⁺ case
+        c = MinMaxCurator{1,Int64,Float64}(1, (125.0,), (200.0,), (0.0,), 10000.0)
+        s = Subgraph(1, 100.0, 1.0, 0.0)
+        p = CurationEnvironment.popt(
+            model, v(s), v̂mins(c, id(s)), v̂maxs(c, id(s)), τ(s), ςs(c, id(s)) / ς(s)
+        )
+        @test p ≈ √(100 * 200) - 100
+
+        # when v = v̂max, don't curate
+        c = MinMaxCurator{1,Int64,Float64}(1, (125.0,), (200.0,), (0.0,), 10000.0)
+        s = Subgraph(1, 200.0, 1.0, 0.0)
+        p = CurationEnvironment.popt(
+            model, v(s), v̂mins(c, id(s)), v̂maxs(c, id(s)), τ(s), ςs(c, id(s)) / ς(s)
+        )
+        @test p ≈ 0.0
+
+        # burn
+        c = MinMaxCurator{1,Int64,Float64}(1, (125.0,), (200.0,), (0.5,), 10000.0)
+        s = Subgraph(1, 300.0, 1.0, 0.0)
+        p = CurationEnvironment.popt(
+            model, v(s), v̂mins(c, id(s)), v̂maxs(c, id(s)), τ(s), ςs(c, id(s)) / ς(s)
+        )
+        @test p ≈ √(300 * 200) - 300
+    end
+
+    @testset "pmax" begin
+        # When τ is 0, just return v̂max - v
+        c = MinMaxCurator{1,Int64,Float64}(1, (125.0,), (200.0,), (0.0,), 10000.0)
+        s = Subgraph(1, 100.0, 1.0, 0.0)
+        p = CurationEnvironment.pmax(
+            model, v(s), v̂maxs(c, id(s)), τ(s), ςs(c, id(s)) / ς(s)
+        )
+        @test p == 100.0
+
+        # If v > v̂max, return 0
+        c = MinMaxCurator{1,Int64,Float64}(1, (125.0,), (200.0,), (0.0,), 10000.0)
+        s = Subgraph(1, 300.0, 1.0, 0.0)
+        p = CurationEnvironment.pmax(
+            model, v(s), v̂maxs(c, id(s)), τ(s), ςs(c, id(s)) / ς(s)
+        )
+        @test p == 0.0
     end
 end

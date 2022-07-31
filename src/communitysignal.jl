@@ -1,12 +1,37 @@
-export CommunitySignal, latefees
+export CommunitySignal, latefees, utility
 
+"""
+    CommunitySignal <: CurationModel
+
+Reflect idea of of individuals contributing to a community asset.
+
+Under this model, curators contribute tokens to the subgraph signal, which entitles them
+to shares.
+The shares entitle curators to rewards.
+Shares are created (minted) whenever a curator pays into the subgraph.
+Shares are destroyed (burned) whenever a curator withdraws funds from the subgraph.
+
+Part of curation involves encouraging people to curate early, rather than to curate just
+before query fees come in.
+In the community signal model, we encourage early curation via a late fee, a small percentage
+which decreases the effectiveness of your current payment based on the amount already on the
+subgraph.
+The late fee amount is distributed to all curators who had entered before you, thus rewarding
+them for being early.
+"""
 struct CommunitySignal <: CurationModel end
 
-"The optimal value to burn."
-bopt(::CommunitySignal, v::Real, v̂::Real, ξ::Real) = -max(min((v - v̂) / 2, ξ * v), 0)
+"""
+    popt(::CommunitySignal, v::Real, v̂min::Real, v̂max::Real, τ::Real, ξ::Real)
 
-"The optimal value to mint."
-popt(::CommunitySignal, v::Real, v̂::Real, τ::Real) = max(√((1 + τ)v * v̂) - (1 + τ)v, 0)
+The optimal amount to curate under the community signal model.
+
+The subgraph has current signal `v` and fee rate `τ`.
+The curator has a min valuation `v̂min` and a max valuation `v̂max`.
+The curator owns `ξ` proportion of the shares on the subgraph.
+
+See also [`utility`](@ref), [`pmax`](@ref).
+"""
 function popt(::CommunitySignal, v::Real, v̂min::Real, v̂max::Real, τ::Real, ξ::Real)
     γ⁺ = √((1 + τ)v * ((1 - ξ)v̂max + τ * ξ * v)) - (1 + τ)v
     γ⁻ = √(v * v̂max) - v
@@ -21,26 +46,16 @@ function popt(::CommunitySignal, v::Real, v̂min::Real, v̂max::Real, τ::Real, 
 end
 
 """
-    best_response(m::CommunitySignal, v::Real, v̂::Real, τ::Real, ξ::Real, σ::Real)
+    pmax(::CommunitySignal, v::Real, v̂max::Real, τ::Real, ξ::Real)
 
-Find the best response on the community signal model for a subgraph with signal `v`
-and tax rate `τ` given the curator believes the true value of the subgraph to be `v̂`.
-The curator has the ratio `ξ` of the total shares on the subgraph and available stake
-`σ`.
-"""
-function best_response(m::CommunitySignal, v::Real, v̂::Real, τ::Real, ξ::Real, σ::Real)
-    p = popt(m, v, v̂, τ) + bopt(m, v, v̂, ξ)
-    p = σ - p ≥ 0 ? p : σ  # Don't spend more than you've got
-    return p
-end
+The maximum profitable payment.
 
+The subgraph has signal `v` and a fee rate `τ`.
+The curator has a max valuation of `v̂max` and owns `ξ` proportion of shares
+on the subgraph.
 """
-    best_response(m::CommunitySignal, c::Curator, s::Subgraph)
-
-Find the best response for curator `c` on subgraph `s`.
-"""
-function best_response(m::CommunitySignal, c::Curator, s::Subgraph)
-    return best_response(m, v(s), v̂s(c, id(s)), τ(s), ςs(c, id(s)) / ς(s), σ(c))
+function pmax(::CommunitySignal, v::Real, v̂max::Real, τ::Real, ξ::Real)
+    return max(0, v̂max - (1 + τ * (1 - ξ)) * v)
 end
 
 """
@@ -98,7 +113,9 @@ end
 Utility on for payment `p` on subgraph `s` for the min-max curator `c` for model `m`.
 """
 function utility(m::CommunitySignal, p::Real, c::MinMaxCurator, s::Subgraph)
-    return utility(m, p, v̂min(c, id(s)), v̂max(c, id(s)), v(s), τ(s), ςs(c, id(s)) / ς(s))
+    return utility(
+        m, p, v̂mins(c, id(s)), v̂maxs(c, id(s)), v(s), τ(s), ςs(c, id(s)) / ς(s)
+    )
 end
 
 latefees(::CommunitySignal, x::Real, v::Real, τ::Real) = x ≥ 0 ? x * v * τ : 0.0

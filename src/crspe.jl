@@ -1,7 +1,7 @@
 export CRSPE
 
 """
-    CRSPE(m::Model)
+    CRSPE <: Auction
 
 A commit-reveal, second price auction has three stages:
 
@@ -12,12 +12,19 @@ hash verification.
 3. Allocate: The highest bidder is reimbursed the difference between their
 bid and the second highest bid and allocated shares in proportion to their
 payment. All others are reimbursed for their deposits.
+
+# Constructors
+
+```julia
+CRSPE{M<:Model}(m::M)
+CRSPE(m::M)
+```
 """
 struct CRSPE{M<:Model} <: Auction
     m::M
 
     CRSPE{M}(m::M) where {M<:Model} = new(m)
-    CRSPE(m::M) where {M<:Module} = CRSPE{M}(m)
+    CRSPE(m::M) where {M<:Model} = CRSPE{M}(m)
 end
 
 @forward CRSPE.m payment, equity_proportion, shares, curate
@@ -33,15 +40,6 @@ shares on the subgraph and available stake `σ`.
 function best_response(
     ::CRSPE{CommunitySignal}, v::Real, v̂min::Real, v̂max::Real, τ::Real, x::Real, σ::Real
 )
-    # mint
-    popt = max(√((1 + τ)v * (v̂max + τ * ξ * v)) - (1 + τ)v, v̂min - v, 0)
-    pmax = max(v̂max - (1 + τ(1 - ξ))v, 0)
-    pbid = (popt, pmin)
-    # burn
-    B = x * v  # token value of all equity
-    bopt = -max(min((v - v̂min) / 2, B), 0)
-    p = pbid .+ bopt
-    p = map(x -> x - σ ≥ 0 ? x : σ, p)  # Don't spend more than you've got
     return p
 end
 
