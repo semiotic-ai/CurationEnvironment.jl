@@ -27,12 +27,14 @@ struct CommunitySignal <: CurationModel end
 The optimal amount to curate under the community signal model.
 
 The subgraph has current signal `v` and fee rate `τ`.
-The curator has a min valuation `v̂min` and a max valuation `v̂max`.
+The curator has a min valuation `v̂min,  a max valuation `v̂max`, and stake `σ`.
 The curator owns `ξ` proportion of the shares on the subgraph.
 
 See also [`utility`](@ref), [`pmax`](@ref).
 """
-function popt(::CommunitySignal, v::Real, v̂min::Real, v̂max::Real, τ::Real, ξ::Real)
+function popt(
+    ::CommunitySignal, v::Real, v̂min::Real, v̂max::Real, τ::Real, ξ::Real, σ::Real
+)
     γ⁺ = √((1 + τ)v * ((1 - ξ)v̂max + τ * ξ * v)) - (1 + τ)v
     γ⁻ = √(v * v̂max) - v
     ρ = @match γ⁺, γ⁻ begin
@@ -42,20 +44,20 @@ function popt(::CommunitySignal, v::Real, v̂min::Real, v̂max::Real, τ::Real, 
         end => γ⁻
         _ => 0
     end
-    return max(ρ, v̂min - v, -ξ * v)
+    return min(max(ρ, v̂min - v, -ξ * v), σ)
 end
 
 """
-    pmax(::CommunitySignal, v::Real, v̂max::Real, τ::Real, ξ::Real)
+    pmax(::CommunitySignal, v::Real, v̂max::Real, τ::Real, ξ::Real, σ::Real)
 
 The maximum profitable payment.
 
 The subgraph has signal `v` and a fee rate `τ`.
-The curator has a max valuation of `v̂max` and owns `ξ` proportion of shares
+The curator has a max valuation of `v̂max`, stake `σ` and owns `ξ` proportion of shares
 on the subgraph.
 """
-function pmax(::CommunitySignal, v::Real, v̂max::Real, τ::Real, ξ::Real)
-    return max(0, v̂max - (1 + τ * (1 - ξ)) * v)
+function pmax(::CommunitySignal, v::Real, v̂max::Real, τ::Real, ξ::Real, σ::Real)
+    return min(max(0, v̂max - (1 + τ * (1 - ξ)) * v), σ)
 end
 
 """
@@ -70,8 +72,7 @@ subgraph and available stake `σ`.
 function best_response(
     m::CommunitySignal, v::Real, v̂min::Real, v̂max::Real, τ::Real, ξ::Real, σ::Real
 )
-    p = popt(m, v, v̂min, v̂max, τ, ξ)
-    p = σ - p ≥ 0 ? p : σ  # Don't spend more than you've got
+    p = popt(m, v, v̂min, v̂max, τ, ξ, σ)
     return p
 end
 

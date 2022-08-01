@@ -221,15 +221,23 @@
         c = MinMaxCurator{1,Int64,Float64}(1, (125.0,), (200.0,), (0.0,), 10000.0)
         s = Subgraph(1, 100.0, 1.0, 0.0)
         p = CurationEnvironment.popt(
-            model, v(s), v̂mins(c, id(s)), v̂maxs(c, id(s)), τ(s), ςs(c, id(s)) / ς(s)
+            model, v(s), v̂mins(c, id(s)), v̂maxs(c, id(s)), τ(s), ςs(c, id(s)) / ς(s), σ(c)
         )
         @test p ≈ √(100 * 200) - 100
+
+        # optimal > σ
+        c = MinMaxCurator{1,Int64,Float64}(1, (125.0,), (200.0,), (0.0,), 10.0)
+        s = Subgraph(1, 100.0, 1.0, 0.0)
+        p = CurationEnvironment.popt(
+            model, v(s), v̂mins(c, id(s)), v̂maxs(c, id(s)), τ(s), ςs(c, id(s)) / ς(s), σ(c)
+        )
+        @test p ≈ 10.0
 
         # when v = v̂max, don't curate
         c = MinMaxCurator{1,Int64,Float64}(1, (125.0,), (200.0,), (0.0,), 10000.0)
         s = Subgraph(1, 200.0, 1.0, 0.0)
         p = CurationEnvironment.popt(
-            model, v(s), v̂mins(c, id(s)), v̂maxs(c, id(s)), τ(s), ςs(c, id(s)) / ς(s)
+            model, v(s), v̂mins(c, id(s)), v̂maxs(c, id(s)), τ(s), ςs(c, id(s)) / ς(s), σ(c)
         )
         @test p ≈ 0.0
 
@@ -237,7 +245,7 @@
         c = MinMaxCurator{1,Int64,Float64}(1, (125.0,), (200.0,), (0.5,), 10000.0)
         s = Subgraph(1, 300.0, 1.0, 0.0)
         p = CurationEnvironment.popt(
-            model, v(s), v̂mins(c, id(s)), v̂maxs(c, id(s)), τ(s), ςs(c, id(s)) / ς(s)
+            model, v(s), v̂mins(c, id(s)), v̂maxs(c, id(s)), τ(s), ςs(c, id(s)) / ς(s), σ(c)
         )
         @test p ≈ √(300 * 200) - 300
     end
@@ -247,15 +255,23 @@
         c = MinMaxCurator{1,Int64,Float64}(1, (125.0,), (200.0,), (0.0,), 10000.0)
         s = Subgraph(1, 100.0, 1.0, 0.0)
         p = CurationEnvironment.pmax(
-            model, v(s), v̂maxs(c, id(s)), τ(s), ςs(c, id(s)) / ς(s)
+            model, v(s), v̂maxs(c, id(s)), τ(s), ςs(c, id(s)) / ς(s), σ(c)
         )
         @test p == 100.0
+
+        # optimal > σ
+        c = MinMaxCurator{1,Int64,Float64}(1, (125.0,), (200.0,), (0.0,), 10.0)
+        s = Subgraph(1, 100.0, 1.0, 0.0)
+        p = CurationEnvironment.pmax(
+            model, v(s), v̂maxs(c, id(s)), τ(s), ςs(c, id(s)) / ς(s), σ(c)
+        )
+        @test p == 10.0
 
         # If v > v̂max, return 0
         c = MinMaxCurator{1,Int64,Float64}(1, (125.0,), (200.0,), (0.0,), 10000.0)
         s = Subgraph(1, 300.0, 1.0, 0.0)
         p = CurationEnvironment.pmax(
-            model, v(s), v̂maxs(c, id(s)), τ(s), ςs(c, id(s)) / ς(s)
+            model, v(s), v̂maxs(c, id(s)), τ(s), ςs(c, id(s)) / ς(s), σ(c)
         )
         @test p == 0.0
     end
