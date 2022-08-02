@@ -120,7 +120,6 @@ MinMaxCurator{M,S,T}(
     σ::T
 ) where {M,S<:Integer,T<:Real}
 ```
-
 """
 struct MinMaxCurator{M,S<:Integer,T<:Real} <: AbstractCurator
     c::Curator{M,S,T}

@@ -221,6 +221,7 @@ function shares(model::CommunitySignal, x::Real, ς::Real, v::Real, τ::Real)
     shares = @match x begin
         if x < 0
         end => ς * x
+        # TODO: Do we need this check on ς == 0?
         _ => (ς * x / (1 - x)) + (ς == 0) * payment(model, x, v, τ)
     end
     return shares

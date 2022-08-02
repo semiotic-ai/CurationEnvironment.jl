@@ -7,6 +7,7 @@ using Accessors
 using MLStyle
 using Lazy
 using Random
+using StructArrays
 
 include("domainmodel.jl")
 include("communitysignal.jl")

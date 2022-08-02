@@ -16,7 +16,7 @@ struct DoubleCRSPE <: Auction
 end
 
 @forward DoubleCRSPE.m payment, equity_proportion, shares
-@forward DoubleCRSPE.m best_response, single_bidder, multiple_bidders, auction, minttokens
+@forward DoubleCRSPE.m best_response, single_bidder, winner, auction, minttokens
 
 """
     burntokens(m::DoubleCRSPE, ps::Vector{<:Real}, cs::Vector{<:Curator}, s::Subgraph)

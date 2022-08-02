@@ -1,4 +1,4 @@
-export CRSPE
+export CRSPE, CRSPEBid
 
 """
     CRSPE <: Auction
@@ -27,21 +27,12 @@ struct CRSPE{M<:Model} <: Auction
     CRSPE(m::M) where {M<:Model} = CRSPE{M}(m)
 end
 
-@forward CRSPE.m payment, equity_proportion, shares, curate
-
-"""
-    best_response(::CRSPE{CommunitySignal}, v::Real, v̂::Real, τ::Real, ξ::Real)
-
-Find the best response on the community signal model in a CRSPE auction for a subgraph with
-signal `v` and tax rate `τ` given the min-max curator believes the true value of the
-subgraph to be in the range `v̂min` and `v̂max`. The curator has the ratio `ξ` of the total
-shares on the subgraph and available stake `σ`.
-"""
-function best_response(
-    ::CRSPE{CommunitySignal}, v::Real, v̂min::Real, v̂max::Real, τ::Real, x::Real, σ::Real
-)
-    return p
+struct CRSPEBid{T<:Real} <: Bid
+    low::T
+    high::T
 end
+
+Lazy.@forward CRSPE.m payment, equity_proportion, shares, popt, pmax
 
 """
     best_response(m::CRSPE{CommunitySignal}, c::MinMaxCurator, s::Subgraph)
@@ -49,39 +40,31 @@ end
 Find the best response for the min-max curator `c` on subgraph `s`.
 """
 function best_response(m::CRSPE{CommunitySignal}, c::MinMaxCurator, s::Subgraph)
-    _ς = ς(s) == 0 ? 1 : ς(s)
-    return best_response(m, v(s), v̂s(c, id(s)), τ(s), ςs(c, id(s)) / _ς, σ(c))
+    b⁻ = popt(m, v(s), v̂mins(c, id(s)), v̂maxs(c, id(s)), τ(s), ςs(c, id(s)) / ς(s), σ(c))
+    b⁺ = pmax(m, v(s), v̂maxs(c, id(s)), τ(s), ςs(c, id(s)) / ς(s), σ(c))
+    b = CRSPEBid(b⁻, b⁺)
+    return b
 end
 
 """
-    single_bidder(m::CRSPE, bids::Vector{<:Real}, cs::Vector{<:Curator}, s::Subgraph)
+    winner(m::CRSPE, bids::StructArray{<:CRSPEBid}, cs::Vector{<:MinMaxCurator}, s::Subgraph, t::Transaction)
 
-When there is only a single bidder, the bidder wins the auction. The curators `cs` make
-transaction `t` based on `bids` on the subgraph `s`.
+Find the winner of the auction.
+The bidder who is willing to pay the most pays the price of the second-highest bid.
+The bidders `cs` make transaction `t` based on `bids` on the subgraph `s`.
 """
-function single_bidder(
-    m::CRSPE, bids::Vector{T}, cs::Vector{C}, s::Subgraph, t::Transaction
-) where {T<:Real,C<:Curator}
-    i = argmax(bids)
-    p = bids[i] * Int(t)
-    c = cs[i]
-    c, s = curate(m, p, c, s)
-    cs = @set cs[i] = c
-    return cs, s
-end
-
-# TODO: Adapt multiple bidders to admit multiple bids per curator
-"""
-    multiple_bidders(m::CRSPE, bids::Vector{<:Real}, cs::Vector{<:Curator}, s::Subgraph)
-When there are multiple bidders, the bidder who is willing to pay the most pays the price of the
-second-highest bid. The curators `cs` make transaction `t` based on `bids` on the subgraph `s`.
-"""
-function multiple_bidders(
-    m::CRSPE, bids::Vector{T}, cs::Vector{C}, s::Subgraph, t::Transaction
-) where {T<:Real,C<:Curator}
-    i = argmax(bids)
-    i2 = partialsortperm(bids, 2; rev=true)
-    p = bids[i2] * Int(t)
+function winner(
+    m::CRSPE, bids::StructArray{B}, cs::Vector{C}, s::Subgraph, t::Transaction
+) where {B<:CRSPEBid,C<:MinMaxCurator}
+    # NOTE: In event of tie, tie-break first using bid.low, and then by whoever is first
+    maxbid = maximum(bids.high)
+    is = findall(bids.high .== maxbid)
+    if length(is) > 1
+        maxlows = maximum(bids.low[is])
+        is = findall(bids.low .== maxlows)
+    end
+    i = is[1]
+    p = partialsort(vcat(bids.high, bids.low), 2; rev=true) * Int(t)
     c = cs[i]
     c, s = curate(m, p, c, s)
     cs = @set cs[i] = c
@@ -89,48 +72,45 @@ function multiple_bidders(
 end
 
 """
-    auction(m::CRSPE, bids::Vector{<:Real}, cs::Vector{<:Curator}, s::Subgraph)
+    auction(m::CRSPE, bids::StructArray{<:CRSPEBid}, cs::Vector{<:MinMaxCurator}, s::Subgraph, t::Transaction)
 
 Runs a commit-reveal second-price auction to select which bid wins the right to curate on the
 subgraph. The curators `cs` make transactions `t` based on `bids` on the subgraph `s`.
 """
 function auction(
-    m::CRSPE, bids::Vector{T}, cs::Vector{C}, s::Subgraph, t::Transaction
-) where {T<:Real,C<:Curator}
-    numbids = sum(bids .> 0)
-
-    (ncs, ns) = @match numbids begin
-        1 => single_bidder(m, bids, cs, s, t)
-        if numbids > 1
-        end => multiple_bidders(m, bids, cs, s, t)
+    m::CRSPE, bids::StructArray{B}, cs::Vector{C}, s::Subgraph, t::Transaction
+) where {B<:CRSPEBid,C<:MinMaxCurator}
+    (ncs, ns) = @match bids begin
+        if any(bids.high .> 0)
+        end => winner(m, bids, cs, s, t)
         _ => (cs, s)
     end
     return ncs, ns
 end
 
 """
-    minttokens(m::CRSPE, ps::Vector{<:Real}, cs::Vector{<:Curator}, s::Subgraph)
+    mintshares(m::CRSPE, ps::Vector{<:CRSPEBid}, cs::Vector{<:MinMaxCurator}, s::Subgraph)
 
-Curators `cs` who have positive payment in `ps` will mint tokens on the subgraph `s`.
+Curators `cs` who have positive payment in `ps` will mint shares on the subgraph `s`.
 """
-function minttokens(
-    m::CRSPE, ps::Vector{T}, cs::Vector{C}, s::Subgraph
-) where {T<:Real,C<:Curator}
-    cs, s = auction(m, ps, cs, s, mint)
+function mintshares(
+    m::CRSPE, bids::StructArray{B}, cs::Vector{C}, s::Subgraph
+) where {B<:CRSPEBid,C<:MinMaxCurator}
+    cs, s = auction(m, bids, cs, s, mint)
     return cs, s
 end
 
 """
-    burntokens(m::CRSPE, ps::Vector{<:Real}, cs::Vector{<:Curator}, s::Subgraph)
+    burnshares(m::CRSPE, ps::StructArray{<:CRSPEBid}, cs::Vector{<:MinMaxCurator}, s::Subgraph)
 
-Curators `cs` who have negative payment in `ps` will burn tokens on the subgraph `s`.
+Curators `cs` who have negative payment in `ps` will burn shares on the subgraph `s`.
 """
-function burntokens(
-    m::CRSPE, ps::Vector{T}, cs::Vector{C}, s::Subgraph
-) where {T<:Real,C<:Curator}
-    is = findall(ps .< 0)
+function burnshares(
+    m::CRSPE, bids::StructArray{B}, cs::Vector{C}, s::Subgraph
+) where {B<:CRSPEBid,C<:MinMaxCurator}
+    is = findall(bids.low .< 0)
     for i in is
-        p = ps[i]
+        p = bids.low[i]
         c = cs[i]
         c, s = curate(m, p, c, s)
         cs = @set cs[i] = c
@@ -139,7 +119,7 @@ function burntokens(
 end
 
 """
-    step(m::CRSPE, πs::Vector{<:Function}, cs::Vector{<:Curator}, s::Subgraph) → Tuple{Tuple{Curator}, Subgraph}
+    step(m::CRSPE, πs::Vector{<:Function}, cs::Vector{<:AbstractCurator}, s::Subgraph) → Tuple{Tuple{Curator}, Subgraph}
 
 The curators `cs` bid in a CRSPE auction on subgraph `s` according to policies `πs`.
 
@@ -149,15 +129,10 @@ auctions, whereas minting can only happen at discrete intervals with auctions.
 """
 function step(
     m::CRSPE, πs::Vector{F}, cs::Vector{C}, s::Subgraph
-) where {F<:Function,C<:Curator}
-    # Act per policy
+) where {F<:Function,C<:AbstractCurator}
     ps = map((π, c) -> π(m, c, s), πs, cs)
-
-    # Burn
-    cs, s = burntokens(m, ps, cs, s)
-
-    # Auction for minting
-    cs, s = auction(m, ps, cs, s, mint)
-
+    bids = StructArray(ps)
+    cs, s = burnshares(m, bids, cs, s)
+    cs, s = mintshares(m, bids, cs, s)
     return cs, s
 end

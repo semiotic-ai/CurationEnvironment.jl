@@ -9,6 +9,9 @@ abstract type CurationModel end
 "Wrap a [`CurationModel`](@ref) in an auction."
 abstract type Auction end
 
+"The bid in an [`Auction`](@ref)."
+abstract type Bid end
+
 const Model = Union{CurationModel,Auction}
 
 @enum Transaction begin
