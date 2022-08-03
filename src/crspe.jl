@@ -32,7 +32,7 @@ struct CRSPEBid{T<:Real} <: Bid
     high::T
 end
 
-Lazy.@forward CRSPE.m payment, equity_proportion, shares, popt, pmax
+Lazy.@forward CRSPE.m payment, equity_proportion, shares, popt, pmax, latefees
 
 """
     best_response(m::CRSPE{CommunitySignal}, c::MinMaxCurator, s::Subgraph)
