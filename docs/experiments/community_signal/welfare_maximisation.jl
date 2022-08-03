@@ -5,7 +5,7 @@
 # date: 2022-08-03
 # author: "[Anirudh Patel](https://github.com/anirudh2)"
 # julia: 1.7
-# description: This experiment investigates whether the Community Signal model is welfare-maximising. TL;DR: Failed.
+# description: This experiment investigates whether the Community Signal model is welfare-maximising. TL;DR - Failed.
 # ---
 
 
