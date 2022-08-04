@@ -24,10 +24,7 @@ makedocs(;
         canonical="https://semiotic-ai/CurationEnvironment.jl",
         assets=assets,
     ),
-    pages=[
-        "Home" => "index.md",
-        experiments,
-    ],
+    pages=["Home" => "index.md", experiments],
 )
 
 # Postprocess

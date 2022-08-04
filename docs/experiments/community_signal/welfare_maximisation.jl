@@ -8,14 +8,12 @@
 # description: This experiment investigates whether the Community Signal model is welfare-maximising. TL;DR - Failed.
 # ---
 
-
 # Welfare maximisation is defined as in the
 # [Curation v2](https://www.overleaf.com/read/hfymjbjmzwvf) yellowpaper.
 # The main idea is that a welfare-maximising state is one in which curators that value
 # subgraph most own the shares and the minimum viable signal is met for all curators
 # Generally speaking, as we shall see, there exist equilibria for the Community Signal (CS)
 # model of curation that are not welfare-maximising.
-
 
 # Seed for reproducibility
 const seed = 343
@@ -77,9 +75,9 @@ const v̂lows = (1000.0, 500.0, 1500.0, 1750.0, 0.0)
 const v̂highs = (2500.0, 4000.0, 2000.0, 3500.0, 3000.0)
 const shares = (0.0, 0.0, 0.0, 0.0, 0.0)
 const stakes = (10000.0, 10000.0, 10000.0, 10000.0, 10000.0)
-cs = map(1:num_c, v̂lows, v̂highs, shares, stakes)  do i, vl, vh, ς, σ
-        return MinMaxCurator{num_s,Int64,Float64}(i, (vl,), (vh,), (ς,), σ)
-    end
+cs = map(1:num_c, v̂lows, v̂highs, shares, stakes) do i, vl, vh, ς, σ
+    return MinMaxCurator{num_s,Int64,Float64}(i, (vl,), (vh,), (ς,), σ)
+end
 s = Subgraph(1, 500.0, 500.0, t)
 
 # We can look at the generated curators
@@ -174,11 +172,11 @@ CSV.write("assets/welfare_max.csv", df)
 time = info["time"]
 f = Figure()
 ax = Axis(f[1, 1]; title="Welfare Max CS", xlabel="time", ylabel="shares")
-lines!(ax, time, info["curatorAshares"]; label = "A")
-lines!(ax, time, info["curatorBshares"]; label = "B")
-lines!(ax, time, info["curatorCshares"]; label = "C")
-lines!(ax, time, info["curatorDshares"]; label = "D")
-lines!(ax, time, info["curatorEshares"]; label = "E")
+lines!(ax, time, info["curatorAshares"]; label="A")
+lines!(ax, time, info["curatorBshares"]; label="B")
+lines!(ax, time, info["curatorCshares"]; label="C")
+lines!(ax, time, info["curatorDshares"]; label="D")
+lines!(ax, time, info["curatorEshares"]; label="E")
 axislegend(ax)
 save("assets/welfare_max.png", f)
 f
